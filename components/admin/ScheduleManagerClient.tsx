@@ -10,18 +10,20 @@ import {
   User,
   School,
   BookOpen,
+  MapPin,
   X,
   Loader2,
   AlertCircle,
   CheckCircle2,
 } from 'lucide-react';
-import { ClassItem, SubjectItem, Profile, TeachingSchedule } from '@/types/database';
+import { Room, Subject, Profile, Schedule } from '@/types/database';
+import Link from 'next/link';
 
 interface ScheduleManagerProps {
   initialSchedules: any[];
   teachers: Profile[];
-  classes: ClassItem[];
-  subjects: SubjectItem[];
+  rooms: Room[];
+  subjects: Subject[];
 }
 
 const HARI_LIST = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
@@ -29,7 +31,7 @@ const HARI_LIST = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 export default function ScheduleManagerClient({
   initialSchedules,
   teachers,
-  classes,
+  rooms,
   subjects,
 }: ScheduleManagerProps) {
   const [selectedHari, setSelectedHari] = useState<string>('Semua');
@@ -65,7 +67,7 @@ export default function ScheduleManagerClient({
   }
 
   async function handleDeleteSchedule(id: string) {
-    if (!confirm('Hapus jadwal mengajar ini?')) return;
+    if (!confirm('Hapus jadwal pelajaran ini?')) return;
     setDeleteId(id);
     const res = await deleteScheduleAction(id);
     setDeleteId(null);
@@ -77,22 +79,39 @@ export default function ScheduleManagerClient({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Kelola Jadwal Mengajar (KBM)</h1>
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md uppercase tracking-wider">
+              Langkah 3
+            </span>
+            <h1 className="text-2xl font-bold text-slate-800">Kelola Jadwal Pelajaran</h1>
+          </div>
           <p className="text-xs text-slate-500 mt-1">
-            Petakan guru, mata pelajaran, dan ruang kelas berdasarkan hari dan jam pelajaran
+            Hubungkan Guru Pengampu, Mata Pelajaran, dan Ruang Kelas ber-QR berdasarkan hari dan jam
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setFeedback(null);
-            setShowAddModal(true);
-          }}
-          className="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer self-start md:self-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Tambah Jadwal Pelajaran</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {rooms.length === 0 && (
+            <Link
+              href="/admin/ruangan"
+              className="text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200"
+            >
+              ⚠️ Harap tambah Ruang Kelas dahulu
+            </Link>
+          )}
+
+          <button
+            onClick={() => {
+              setFeedback(null);
+              setShowAddModal(true);
+            }}
+            disabled={rooms.length === 0 || subjects.length === 0}
+            className="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer disabled:opacity-50"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Tambah Jadwal Baru</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Hari */}
@@ -133,7 +152,7 @@ export default function ScheduleManagerClient({
               <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
                 <th className="py-4 px-6">Hari & Jam</th>
                 <th className="py-4 px-6">Mata Pelajaran</th>
-                <th className="py-4 px-6">Ruang Kelas</th>
+                <th className="py-4 px-6">Ruang Kelas (Lokasi QR)</th>
                 <th className="py-4 px-6">Guru Pengampu</th>
                 <th className="py-4 px-6 text-right">Aksi</th>
               </tr>
@@ -142,13 +161,13 @@ export default function ScheduleManagerClient({
               {filteredSchedules.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
-                    Tidak ada jadwal pelajaran untuk hari yang dipilih.
+                    Tidak ada jadwal pelajaran pada hari yang dipilih.
                   </td>
                 </tr>
               ) : (
                 filteredSchedules.map((sch) => {
                   const teacher = sch.profiles || {};
-                  const kls = sch.classes || {};
+                  const room = sch.rooms || {};
                   const sub = sch.subjects || {};
 
                   return (
@@ -158,23 +177,34 @@ export default function ScheduleManagerClient({
                           {sch.hari}
                         </span>
                         <span className="font-semibold text-slate-700 font-mono">
-                          {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)}
+                          {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)} WIB
                         </span>
                       </td>
 
-                      <td className="py-4 px-6 font-bold text-slate-800">
-                        {sub.nama_mapel || 'Mapel'}
+                      <td className="py-4 px-6">
+                        <div className="font-bold text-slate-800 flex items-center gap-2">
+                          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                          <span>{sub.nama_mapel || 'Mapel'}</span>
+                        </div>
                         {sub.kode_mapel && (
-                          <span className="text-[10px] text-slate-400 font-mono block">
+                          <span className="text-[10px] text-slate-400 font-mono block pl-5">
                             {sub.kode_mapel}
                           </span>
                         )}
                       </td>
 
-                      <td className="py-4 px-6 font-semibold text-slate-700">
-                        <span className="px-2 py-0.5 bg-slate-100 rounded-md">
-                          {kls.nama_kelas || 'Kelas'}
-                        </span>
+                      <td className="py-4 px-6">
+                        <div className="font-semibold text-slate-800 flex items-center gap-1.5">
+                          <School className="w-3.5 h-3.5 text-purple-600" />
+                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-bold">
+                            {room.nama_ruangan || 'Ruangan'}
+                          </span>
+                        </div>
+                        {room.gedung && (
+                          <span className="text-[10px] text-slate-400 block pl-5 mt-0.5">
+                            {room.gedung}
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-4 px-6">
@@ -210,7 +240,9 @@ export default function ScheduleManagerClient({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-bold text-slate-800">Tambah Jadwal Pelajaran</h3>
-                <p className="text-xs text-slate-400">Tetapkan guru pengampu dan jam mengajar di kelas</p>
+                <p className="text-xs text-slate-400">
+                  Hubungkan Guru, Mata Pelajaran, dan Ruang Kelas ber-QR
+                </p>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
@@ -252,23 +284,9 @@ export default function ScheduleManagerClient({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Ruang Kelas *</label>
-                  <select
-                    name="class_id"
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">-- Pilih Kelas --</option>
-                    {classes.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nama_kelas} (Tingkat {c.tingkat})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Mata Pelajaran *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Mata Pelajaran (Langkah 1) *
+                  </label>
                   <select
                     name="subject_id"
                     required
@@ -282,10 +300,28 @@ export default function ScheduleManagerClient({
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Ruang Kelas (Langkah 2) *
+                  </label>
+                  <select
+                    name="room_id"
+                    required
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">-- Pilih Ruang Kelas --</option>
+                    {rooms.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.nama_ruangan} {r.gedung ? `(${r.gedung})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Hari Pelajaran *</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Hari *</label>
                 <select
                   name="hari"
                   required

@@ -22,18 +22,18 @@ export default async function GuruDashboardPage() {
   let todayClassAttendances: any[] = [];
 
   if (user) {
-    const [attRes, setRes, schRes, clsAttRes] = await Promise.all([
+    const [attRes, setRes, schRes, roomAttRes] = await Promise.all([
       supabase.from('attendances').select('*').eq('user_id', user.id).eq('tanggal', todayStr).maybeSingle(),
       supabase.from('school_settings').select('*').limit(1).maybeSingle(),
       supabase
-        .from('teaching_schedules')
-        .select('*, classes(nama_kelas), subjects(nama_mapel)')
+        .from('schedules')
+        .select('*, rooms(nama_ruangan, gedung), subjects(nama_mapel)')
         .eq('teacher_id', user.id)
         .eq('hari', todayDayName)
         .order('jam_mulai', { ascending: true }),
       supabase
-        .from('class_attendances')
-        .select('*, classes(nama_kelas)')
+        .from('room_attendances')
+        .select('*, rooms(nama_ruangan)')
         .eq('teacher_id', user.id)
         .eq('tanggal', todayStr),
     ]);
@@ -41,7 +41,7 @@ export default async function GuruDashboardPage() {
     todayAttendance = attRes.data;
     settings = setRes.data;
     todaySchedules = schRes.data || [];
-    todayClassAttendances = clsAttRes.data || [];
+    todayClassAttendances = roomAttRes.data || [];
   }
 
   const sudahMasuk = !!todayAttendance?.jam_masuk;
@@ -197,24 +197,24 @@ export default async function GuruDashboardPage() {
           </div>
 
           <Link
-            href="/guru/scan-kelas"
+            href="/guru/scan-ruangan"
             className="py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-purple-500/20 transition"
           >
             <QrCode className="w-3.5 h-3.5" />
-            <span>Scan QR Kelas</span>
+            <span>Scan QR Ruangan</span>
           </Link>
         </div>
 
         {todaySchedules.length === 0 ? (
           <div className="p-4 bg-slate-50 rounded-xl text-center text-xs text-slate-400">
-            Tidak ada jadwal mengajar di kelas untuk hari {todayDayName}.
+            Tidak ada jadwal pelajaran di ruangan kelas untuk hari {todayDayName}.
           </div>
         ) : (
           <div className="space-y-2.5">
             {todaySchedules.map((sch) => {
-              const klsName = sch.classes?.nama_kelas || 'Kelas';
+              const roomName = sch.rooms?.nama_ruangan || 'Ruangan';
               const mapelName = sch.subjects?.nama_mapel || 'Mapel';
-              const hasCheckedIn = todayClassAttendances.some((a) => a.class_id === sch.class_id);
+              const hasCheckedIn = todayClassAttendances.some((a) => a.room_id === sch.room_id);
 
               return (
                 <div
@@ -224,8 +224,8 @@ export default async function GuruDashboardPage() {
                   <div className="space-y-0.5">
                     <div className="font-bold text-slate-800">{mapelName}</div>
                     <div className="text-slate-500 flex items-center gap-2 text-[11px]">
-                      <span className="font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                        {klsName}
+                      <span className="font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded">
+                        {roomName}
                       </span>
                       <span>
                         {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)} WIB
@@ -239,7 +239,7 @@ export default async function GuruDashboardPage() {
                     </span>
                   ) : (
                     <Link
-                      href="/guru/scan-kelas"
+                      href="/guru/scan-ruangan"
                       className="px-2.5 py-1 bg-purple-100 hover:bg-purple-200 text-purple-800 font-bold rounded-full text-[10px] flex items-center gap-1 transition"
                     >
                       <QrCode className="w-3 h-3" /> Check-in QR

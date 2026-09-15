@@ -12,16 +12,17 @@ Aplikasi sistem pencatatan kehadiran digital untuk Guru & Tenaga Kependidikan (P
   - Validasi lokasi real-time dengan GPS (hanya bisa absen jika berada dalam radius sekolah).
   - Swafoto kamera depan (*live capture selfie*) untuk mencegah kecurangan.
   - Deteksi keterlambatan otomatis berdasarkan jam masuk dan toleransi sekolah.
-- **Presensi Masuk Kelas (Scan QR Code KBM)**: Pindai QR Code yang tertempel di dinding kelas menggunakan kamera HP untuk mencatat kehadiran mengajar sesuai jadwal dan mencatat materi pelajaran.
-- **Jadwal Mengajar Pribadi**: Memantau daftar kelas dan mata pelajaran yang diampu hari ini.
+- **Presensi Masuk Ruangan (Scan QR Ruang Kelas)**: Pindai QR Code yang tertempel di pintu/dinding ruang kelas menggunakan kamera HP untuk mencatat kehadiran mengajar guru di ruangan tersebut dan mencatat materi pelajaran.
+- **Jadwal Mengajar Pribadi**: Memantau daftar mata pelajaran dan ruang kelas yang diampu hari ini.
 - **Permohonan Izin / Sakit / Cuti**: Formulir pengajuan izin dengan upload berkas surat dokter/dinas dan pelacakan status (*Pending, Disetujui, Ditolak*).
 - **Riwayat Presensi**: Log kehadiran pribadi 30 hari terakhir dan ringkasan kedisiplinan.
 
 ### 🏫 Portal Admin Sekolah (Dashboard Desktop)
 - **Monitoring Real-Time**: Pantau kehadiran hari ini, statistik kehadiran tepat waktu, terlambat, izin, dan guru yang belum hadir.
 - **Manajemen Akun Guru**: Admin mendaftarkan akun guru baru secara terpusat via API Supabase Admin.
-- **Kelola Kelas & Mata Pelajaran**: Tambah rombongan belajar / ruang kelas, atur mata pelajaran, dan **Generate Kartu QR Code Siap Cetak** untuk ditempel di setiap ruang kelas.
-- **Kelola Jadwal Mengajar (KBM)**: Memetakan guru pengampu, mata pelajaran, ruang kelas, hari, dan jam pelajaran.
+- **Langkah 1: Kelola Mata Pelajaran (`/admin/mapel`)**: Tambah dan kelola daftar mata pelajaran atau mata kuliah sekolah.
+- **Langkah 2: Kelola Ruang Kelas & QR (`/admin/ruangan`)**: Daftarkan ruang kelas/lab/aula fisik dan **Cetak Kartu QR Code Per Ruangan** untuk ditempel di pintu atau dinding kelas.
+- **Langkah 3: Kelola Jadwal Pelajaran (`/admin/jadwal-pelajaran`)**: Hubungkan **Guru Pengampu + Mata Pelajaran + Ruang Kelas (Lokasi QR)** berdasarkan hari dan jam pelajaran.
 - **Pengaturan Geofence & Jam Kerja**: Atur koordinat lintang/bujur sekolah, toleransi radius geofence (meter), jam masuk, jam pulang, serta toleransi keterlambatan.
 - **Persetujuan Izin**: Tinjau pengajuan izin/sakit guru dengan opsi persetujuan atau penolakan.
 - **Rekapitulasi & Ekspor Laporan**: Filter per bulan dan unduh laporan ke format Excel/CSV.

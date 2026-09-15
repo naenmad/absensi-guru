@@ -12,6 +12,7 @@ import {
   School,
   CalendarDays,
   QrCode,
+  BookOpen,
 } from 'lucide-react';
 import AdminSidebarLink from '@/components/admin/AdminSidebarLink';
 
@@ -69,11 +70,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Users className="w-5 h-5" />
           </AdminSidebarLink>
 
-          <AdminSidebarLink href="/admin/kelas" label="Kelas & QR Code">
+          <AdminSidebarLink href="/admin/mapel" label="1. Mata Pelajaran">
+            <BookOpen className="w-5 h-5" />
+          </AdminSidebarLink>
+
+          <AdminSidebarLink href="/admin/ruangan" label="2. Ruang Kelas & QR">
             <QrCode className="w-5 h-5" />
           </AdminSidebarLink>
 
-          <AdminSidebarLink href="/admin/jadwal-mengajar" label="Jadwal Mengajar">
+          <AdminSidebarLink href="/admin/jadwal-pelajaran" label="3. Jadwal Pelajaran">
             <CalendarDays className="w-5 h-5" />
           </AdminSidebarLink>
 

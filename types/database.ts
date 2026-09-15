@@ -66,48 +66,51 @@ export interface LeaveRequest {
   profiles?: Profile;
 }
 
-export interface ClassItem {
-  id: string;
-  nama_kelas: string;
-  tingkat: string;
-  kode_qr: string;
-  deskripsi: string | null;
-  created_at?: string;
-}
-
-export interface SubjectItem {
+// 1. MATA PELAJARAN
+export interface Subject {
   id: string;
   nama_mapel: string;
   kode_mapel: string | null;
   created_at?: string;
 }
 
-export interface TeachingSchedule {
+// 2. RUANG KELAS (QR Code ditempel di ruangan ini)
+export interface Room {
+  id: string;
+  nama_ruangan: string;
+  kode_qr: string;
+  gedung: string | null;
+  deskripsi: string | null;
+  created_at?: string;
+}
+
+// 3. JADWAL PELAJARAN (Menyambungkan Guru + Mata Pelajaran + Ruang Kelas)
+export interface Schedule {
   id: string;
   teacher_id: string;
-  class_id: string;
   subject_id: string;
+  room_id: string;
   hari: string;
   jam_mulai: string;
   jam_selesai: string;
   created_at?: string;
   profiles?: Profile;
-  classes?: ClassItem;
-  subjects?: SubjectItem;
+  subjects?: Subject;
+  rooms?: Room;
 }
 
-export interface ClassAttendance {
+// 4. PRESENSI KBM GURU DI RUANGAN (Hasil Scan QR Ruangan)
+export interface RoomAttendance {
   id: string;
-  schedule_id: string | null;
+  room_id: string;
   teacher_id: string;
-  class_id: string;
+  schedule_id: string | null;
   tanggal: string;
   jam_masuk: string;
   jam_keluar: string | null;
   materi_pembelajaran: string | null;
   created_at?: string;
   profiles?: Profile;
-  classes?: ClassItem;
-  teaching_schedules?: TeachingSchedule;
+  rooms?: Room;
+  schedules?: Schedule;
 }
-

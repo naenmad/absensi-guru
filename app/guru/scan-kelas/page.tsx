@@ -1,6 +1,5 @@
-import React from 'react';
-import ClassQrScanner from '@/components/guru/ClassQrScanner';
+import { redirect } from 'next/navigation';
 
-export default function ScanKelasPage() {
-  return <ClassQrScanner />;
+export default function ScanKelasRedirect() {
+  redirect('/guru/scan-ruangan');
 }
