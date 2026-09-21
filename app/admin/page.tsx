@@ -54,120 +54,127 @@ export default async function AdminDashboardPage() {
   const persentaseHadir = totalGuru > 0 ? Math.round((totalHadir / totalGuru) * 100) : 0;
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-8 text-white shadow-xl shadow-indigo-900/10 flex items-center justify-between">
+    <div className="space-y-6">
+      {/* Header Ringkasan & Tingkat Kehadiran */}
+      <div className="bg-white rounded-xl p-6 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-semibold uppercase tracking-wider text-blue-100">
-            Monitoring Presensi Real-Time
-          </span>
-          <h1 className="text-3xl font-extrabold mt-3 tracking-tight">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              Sistem Aktif
+            </span>
+          </div>
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
             Ringkasan Kehadiran Hari Ini
           </h1>
-          <p className="text-blue-100 text-sm mt-1 max-w-xl">
-            Pantau kehadiran dewan guru dan tenaga kependidikan secara langsung beserta bukti
-            geolokasi dan swafoto.
+          <p className="text-xs text-slate-500 mt-1 max-w-xl">
+            Pemantauan presensi pendidik & tenaga kependidikan berbasis lokasi dan swafoto
           </p>
         </div>
 
-        <div className="hidden lg:flex items-center gap-4 bg-white/10 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/15">
-          <div className="text-right">
-            <span className="text-xs text-blue-200 block">Tingkat Kehadiran</span>
-            <span className="text-3xl font-black">{persentaseHadir}%</span>
+        <div className="flex items-center gap-4 bg-slate-50 px-5 py-3 rounded-lg border border-slate-200/80 self-start md:self-auto">
+          <div>
+            <span className="text-[11px] text-slate-500 font-medium block">Tingkat Kehadiran</span>
+            <span className="text-2xl font-bold text-slate-900">{persentaseHadir}%</span>
           </div>
-          <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">
-            <TrendingUp className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-700">
+            <TrendingUp className="w-5 h-5 text-blue-600" />
           </div>
         </div>
       </div>
 
       {/* Grid Kartu Metrik */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-            <Users className="w-6 h-6" />
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-slate-500">Total Guru</span>
+            <div className="w-8 h-8 rounded-lg bg-slate-50 border border-slate-100 text-slate-600 flex items-center justify-center">
+              <Users className="w-4 h-4" />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-400 font-medium block">Total Guru</span>
-            <span className="text-2xl font-bold text-slate-800">{totalGuru}</span>
-          </div>
+          <div className="text-2xl font-bold text-slate-900">{totalGuru}</div>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Akun terdaftar</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-            <CheckCircle2 className="w-6 h-6" />
+        <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-slate-500">Tepat Waktu</span>
+            <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-400 font-medium block">Tepat Waktu</span>
-            <span className="text-2xl font-bold text-emerald-600">{tepatWaktu}</span>
-          </div>
+          <div className="text-2xl font-bold text-emerald-700">{tepatWaktu}</div>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Sebelum batas waktu</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-            <Clock className="w-6 h-6" />
+        <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-slate-500">Terlambat</span>
+            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center">
+              <Clock className="w-4 h-4" />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-400 font-medium block">Terlambat</span>
-            <span className="text-2xl font-bold text-amber-600">{terlambat}</span>
-          </div>
+          <div className="text-2xl font-bold text-amber-700">{terlambat}</div>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Melewati batas waktu</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-            <FileText className="w-6 h-6" />
+        <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-slate-500">Izin / Cuti</span>
+            <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center">
+              <FileText className="w-4 h-4" />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-400 font-medium block">Izin / Sakit</span>
-            <span className="text-2xl font-bold text-indigo-600">{totalIzin}</span>
-          </div>
+          <div className="text-2xl font-bold text-blue-700">{totalIzin}</div>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Disetujui hari ini</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0">
-            <AlertCircle className="w-6 h-6" />
+        <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs col-span-2 md:col-span-1">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-medium text-slate-500">Belum Presensi</span>
+            <div className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center">
+              <AlertCircle className="w-4 h-4" />
+            </div>
           </div>
-          <div>
-            <span className="text-xs text-slate-400 font-medium block">Belum Hadir</span>
-            <span className="text-2xl font-bold text-rose-600">{belumAbsen}</span>
-          </div>
+          <div className="text-2xl font-bold text-rose-700">{belumAbsen}</div>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Belum ada catatan</span>
         </div>
       </div>
 
       {/* Tabel Log Presensi Hari Ini */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="p-4 sm:px-6 sm:py-4 border-b border-slate-200/80 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Daftar Kehadiran Hari Ini</h2>
+            <h2 className="text-sm font-bold text-slate-900">Catatan Presensi Hari Ini</h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Log aktivitas presensi masuk & pulang guru secara berurutan
+              Log kehadiran masuk dan kepulangan guru
             </p>
           </div>
           <Link
             href="/admin/laporan"
-            className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-xl border border-blue-100 transition"
+            className="text-xs font-medium text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 transition"
           >
-            Lihat Laporan Lengkap &rarr;
+            Buka Rekapitulasi
           </Link>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                <th className="py-3.5 px-6">Guru</th>
-                <th className="py-3.5 px-6">Foto Swafoto</th>
-                <th className="py-3.5 px-6">Jam Masuk</th>
-                <th className="py-3.5 px-6">Jam Pulang</th>
-                <th className="py-3.5 px-6">Status Masuk</th>
-                <th className="py-3.5 px-6">Koordinat GPS</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 uppercase tracking-wider font-semibold">
+                <th className="py-3 px-5">Guru</th>
+                <th className="py-3 px-5">Swafoto</th>
+                <th className="py-3 px-5">Jam Masuk</th>
+                <th className="py-3 px-5">Jam Pulang</th>
+                <th className="py-3 px-5">Status</th>
+                <th className="py-3 px-5">Lokasi GPS</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {attendancesList.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
-                    Belum ada guru yang melakukan presensi hari ini.
+                    Belum ada presensi tercatat hari ini.
                   </td>
                 </tr>
               ) : (
@@ -177,21 +184,21 @@ export default async function AdminDashboardPage() {
 
                   return (
                     <tr key={att.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">{teacher.nama || 'Guru'}</div>
+                      <td className="py-3.5 px-5">
+                        <div className="font-semibold text-slate-900">{teacher.nama || 'Guru'}</div>
                         <div className="text-[11px] text-slate-400">
                           {teacher.nip ? `NIP. ${teacher.nip}` : teacher.jabatan || '-'}
                         </div>
                       </td>
 
-                      <td className="py-4 px-6">
-                        <div className="flex items-center gap-2">
+                      <td className="py-3.5 px-5">
+                        <div className="flex items-center gap-1.5">
                           {att.foto_masuk_url ? (
                             <a
                               href={att.foto_masuk_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 block shadow-sm"
+                              className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 block"
                             >
                               <img
                                 src={att.foto_masuk_url}
@@ -200,8 +207,8 @@ export default async function AdminDashboardPage() {
                               />
                             </a>
                           ) : (
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400">
-                              <Camera className="w-4 h-4" />
+                            <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
+                              <Camera className="w-3.5 h-3.5" />
                             </div>
                           )}
                           {att.foto_pulang_url && (
@@ -209,7 +216,7 @@ export default async function AdminDashboardPage() {
                               href={att.foto_pulang_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 block shadow-sm"
+                              className="w-9 h-9 rounded-lg overflow-hidden border border-slate-200 block"
                             >
                               <img
                                 src={att.foto_pulang_url}
@@ -221,7 +228,7 @@ export default async function AdminDashboardPage() {
                         </div>
                       </td>
 
-                      <td className="py-4 px-6 font-semibold text-slate-800">
+                      <td className="py-3.5 px-5 font-medium text-slate-800">
                         {att.jam_masuk
                           ? new Date(att.jam_masuk).toLocaleTimeString('id-ID', {
                               hour: '2-digit',
@@ -230,7 +237,7 @@ export default async function AdminDashboardPage() {
                           : '-'}
                       </td>
 
-                      <td className="py-4 px-6 font-semibold text-slate-800">
+                      <td className="py-3.5 px-5 font-medium text-slate-800">
                         {att.jam_pulang
                           ? new Date(att.jam_pulang).toLocaleTimeString('id-ID', {
                               hour: '2-digit',
@@ -239,22 +246,22 @@ export default async function AdminDashboardPage() {
                           : '-'}
                       </td>
 
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         <span
-                          className={`px-3 py-1 rounded-full font-bold text-[11px] ${
+                          className={`px-2 py-0.5 rounded-md font-medium text-[11px] border ${
                             isTerlambat
-                              ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                              : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                              ? 'bg-amber-50 text-amber-700 border-amber-200'
+                              : 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           }`}
                         >
                           {isTerlambat ? 'Terlambat' : 'Tepat Waktu'}
                         </span>
                       </td>
 
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         {att.lat_masuk && att.lng_masuk ? (
                           <div className="flex items-center gap-1 text-[11px] text-slate-500 font-mono">
-                            <MapPin className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                             <span>
                               {att.lat_masuk.toFixed(4)}, {att.lng_masuk.toFixed(4)}
                             </span>

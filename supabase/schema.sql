@@ -48,8 +48,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- 4. Tabel Pengaturan Sekolah (Geofence & Jam Kerja)
 CREATE TABLE IF NOT EXISTS public.school_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  nama_sekolah VARCHAR(150) NOT NULL DEFAULT 'SMK Negeri 1 Teladan',
-  alamat TEXT DEFAULT 'Jl. Pendidikan No. 1',
+  nama_sekolah VARCHAR(150) NOT NULL DEFAULT 'SMP Negeri 8 Karawang Barat',
+  alamat TEXT DEFAULT 'Karawang Barat, Jawa Barat',
   latitude DOUBLE PRECISION NOT NULL DEFAULT -6.2088,
   longitude DOUBLE PRECISION NOT NULL DEFAULT 106.8456,
   radius_meters INT NOT NULL DEFAULT 100,
@@ -125,7 +125,7 @@ CREATE TRIGGER on_auth_user_created
 
 -- 8. Seed Data Pengaturan Sekolah Default (jika belum ada)
 INSERT INTO public.school_settings (nama_sekolah, alamat, latitude, longitude, radius_meters, jam_masuk, jam_pulang, toleransi_terlambat_menit)
-SELECT 'Sekolah Menengah Kejuruan', 'Jl. Merdeka No. 45', -6.2088, 106.8456, 100, '07:00:00', '15:00:00', 15
+SELECT 'SMP Negeri 8 Karawang Barat', 'Karawang Barat, Jawa Barat', -6.3033, 107.3012, 100, '07:00:00', '15:00:00', 15
 WHERE NOT EXISTS (SELECT 1 FROM public.school_settings);
 
 -- 9. Row Level Security (RLS)
@@ -134,17 +134,42 @@ ALTER TABLE public.school_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.attendances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.leave_requests ENABLE ROW LEVEL SECURITY;
 
--- Policy: Semua user terautentikasi bisa membaca profil
+-- Helper function is_admin() dengan SECURITY DEFINER agar tidak memicu infinite recursion pada profiles
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles
+    WHERE id = auth.uid() AND role = 'ADMIN'
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO service_role;
+
+-- Policy Profiles: Semua user terautentikasi bisa membaca profil
 CREATE POLICY "Allow authenticated read profiles" ON public.profiles
   FOR SELECT TO authenticated USING (true);
 
--- Policy: Admin bisa CRUD profil, Guru bisa update profil sendiri
+-- Policy Profiles: User bisa update miliknya sendiri, Admin bisa update semua
 CREATE POLICY "Allow users update own profile or admin" ON public.profiles
-  FOR ALL TO authenticated
-  USING (
-    auth.uid() = id OR 
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
-  );
+  FOR UPDATE TO authenticated
+  USING (auth.uid() = id OR public.is_admin())
+  WITH CHECK (auth.uid() = id OR public.is_admin());
+
+-- Policy Profiles: Insert profil baru
+CREATE POLICY "Allow users insert own profile or admin" ON public.profiles
+  FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = id OR public.is_admin());
+
+-- Policy Profiles: Admin bisa delete profil
+CREATE POLICY "Allow admin delete profiles" ON public.profiles
+  FOR DELETE TO authenticated
+  USING (public.is_admin());
 
 -- Policy: Semua user bisa baca school_settings, Admin bisa update
 CREATE POLICY "Allow read school_settings" ON public.school_settings
@@ -152,28 +177,28 @@ CREATE POLICY "Allow read school_settings" ON public.school_settings
 
 CREATE POLICY "Allow admin update school_settings" ON public.school_settings
   FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 -- Policy: Attendances
 CREATE POLICY "Allow users read own attendances or admin" ON public.attendances
   FOR SELECT TO authenticated
   USING (
     user_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
+    public.is_admin()
   );
 
 CREATE POLICY "Allow users insert own attendances or admin" ON public.attendances
   FOR INSERT TO authenticated
   WITH CHECK (
     user_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
+    public.is_admin()
   );
 
 CREATE POLICY "Allow users update own attendances or admin" ON public.attendances
   FOR UPDATE TO authenticated
   USING (
     user_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
+    public.is_admin()
   );
 
 -- Policy: Leave Requests
@@ -181,7 +206,7 @@ CREATE POLICY "Allow users read own leaves or admin" ON public.leave_requests
   FOR SELECT TO authenticated
   USING (
     user_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
+    public.is_admin()
   );
 
 CREATE POLICY "Allow users create own leaves" ON public.leave_requests
@@ -190,7 +215,7 @@ CREATE POLICY "Allow users create own leaves" ON public.leave_requests
 
 CREATE POLICY "Allow admin update leaves" ON public.leave_requests
   FOR UPDATE TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 -- 10. Storage Buckets (Buka di Supabase Dashboard -> Storage)
 -- Jalankan ini bila ingin membuat bucket otomatis lewat SQL:

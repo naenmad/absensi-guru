@@ -58,28 +58,28 @@ CREATE POLICY "Allow read classes" ON public.classes
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow admin manage classes" ON public.classes
   FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 -- Policies for subjects
 CREATE POLICY "Allow read subjects" ON public.subjects
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow admin manage subjects" ON public.subjects
   FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 -- Policies for schedules
 CREATE POLICY "Allow read schedules" ON public.teaching_schedules
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow admin manage schedules" ON public.teaching_schedules
   FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 -- Policies for class attendances
 CREATE POLICY "Allow read class attendances" ON public.class_attendances
   FOR SELECT TO authenticated
   USING (
     teacher_id = auth.uid() OR
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN')
+    public.is_admin()
   );
 CREATE POLICY "Allow teachers insert class attendances" ON public.class_attendances
   FOR INSERT TO authenticated

@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 
 export async function loginAction(prevState: any, formData: FormData) {
@@ -16,8 +17,10 @@ export async function loginAction(prevState: any, formData: FormData) {
   let loginEmail = emailOrNip.trim();
 
   // Jika user memasukkan NIP (bukan format email @), cari email terlebih dahulu dari tabel profiles
+  // Gunakan admin client karena user belum terautentikasi (RLS profiles hanya untuk authenticated)
   if (!loginEmail.includes('@')) {
-    const { data: profile, error: nipError } = await supabase
+    const supabaseAdmin = createAdminClient();
+    const { data: profile, error: nipError } = await supabaseAdmin
       .from('profiles')
       .select('email')
       .eq('nip', loginEmail)

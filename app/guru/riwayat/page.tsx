@@ -27,34 +27,34 @@ export default async function RiwayatGuruPage() {
   ).length;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-slate-800">Riwayat Kehadiran</h2>
-        <p className="text-xs text-slate-500">Catatan presensi harian 30 hari terakhir</p>
+        <h2 className="text-sm font-semibold text-slate-900">Riwayat Kehadiran</h2>
+        <p className="text-[11px] text-slate-500">Catatan presensi harian 30 hari terakhir</p>
       </div>
 
       {/* Mini Statistik */}
       <div className="grid grid-cols-3 gap-2 text-center">
-        <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm">
-          <span className="text-[10px] text-slate-400 font-medium block mb-0.5">Tepat Waktu</span>
-          <span className="text-lg font-extrabold text-emerald-600">
+        <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs">
+          <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Tepat Waktu</span>
+          <span className="text-base font-semibold font-mono text-emerald-700">
             {totalHadir - totalTerlambat}
           </span>
         </div>
-        <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm">
-          <span className="text-[10px] text-slate-400 font-medium block mb-0.5">Terlambat</span>
-          <span className="text-lg font-extrabold text-amber-500">{totalTerlambat}</span>
+        <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs">
+          <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Terlambat</span>
+          <span className="text-base font-semibold font-mono text-amber-600">{totalTerlambat}</span>
         </div>
-        <div className="bg-white rounded-2xl p-3 border border-slate-100 shadow-sm">
-          <span className="text-[10px] text-slate-400 font-medium block mb-0.5">Izin/Sakit</span>
-          <span className="text-lg font-extrabold text-blue-600">{totalIzinSakit}</span>
+        <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs">
+          <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Izin/Sakit</span>
+          <span className="text-base font-semibold font-mono text-slate-700">{totalIzinSakit}</span>
         </div>
       </div>
 
       {/* Daftar Log */}
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {attendances.length === 0 ? (
-          <div className="p-8 bg-white rounded-2xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+          <div className="py-8 px-4 bg-slate-50/60 rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
             Belum ada catatan presensi.
           </div>
         ) : (
@@ -64,11 +64,11 @@ export default async function RiwayatGuruPage() {
             return (
               <div
                 key={att.id}
-                className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm space-y-3"
+                className="bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-xs space-y-2.5"
               >
-                <div className="flex items-center justify-between border-b border-slate-50 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
-                    <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900">
+                    <Calendar className="w-3.5 h-3.5 text-slate-500" />
                     <span>
                       {new Date(att.tanggal).toLocaleDateString('id-ID', {
                         weekday: 'short',
@@ -80,10 +80,10 @@ export default async function RiwayatGuruPage() {
                   </div>
 
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                       isTerlambat
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-emerald-100 text-emerald-800'
+                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                     }`}
                   >
                     {isTerlambat ? 'Terlambat' : 'Tepat Waktu'}
@@ -91,10 +91,10 @@ export default async function RiwayatGuruPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between">
+                  <div className="bg-slate-50/70 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Masuk</span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="text-[10px] text-slate-500 block">Masuk</span>
+                      <span className="font-semibold text-slate-900 font-mono">
                         {att.jam_masuk
                           ? new Date(att.jam_masuk).toLocaleTimeString('id-ID', {
                               hour: '2-digit',
@@ -108,7 +108,7 @@ export default async function RiwayatGuruPage() {
                         href={att.foto_masuk_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-7 h-7 rounded-lg overflow-hidden border border-slate-200 block shrink-0"
+                        className="w-7 h-7 rounded overflow-hidden border border-slate-200 block shrink-0"
                       >
                         <img
                           src={att.foto_masuk_url}
@@ -119,10 +119,10 @@ export default async function RiwayatGuruPage() {
                     )}
                   </div>
 
-                  <div className="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between">
+                  <div className="bg-slate-50/70 p-2 rounded-lg border border-slate-200/60 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Pulang</span>
-                      <span className="font-semibold text-slate-800">
+                      <span className="text-[10px] text-slate-500 block">Pulang</span>
+                      <span className="font-semibold text-slate-900 font-mono">
                         {att.jam_pulang
                           ? new Date(att.jam_pulang).toLocaleTimeString('id-ID', {
                               hour: '2-digit',
@@ -136,7 +136,7 @@ export default async function RiwayatGuruPage() {
                         href={att.foto_pulang_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="w-7 h-7 rounded-lg overflow-hidden border border-slate-200 block shrink-0"
+                        className="w-7 h-7 rounded overflow-hidden border border-slate-200 block shrink-0"
                       >
                         <img
                           src={att.foto_pulang_url}

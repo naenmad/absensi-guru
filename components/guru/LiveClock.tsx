@@ -23,8 +23,8 @@ export default function LiveClock() {
   }, []);
 
   return (
-    <div className="text-4xl font-extrabold tracking-tight">
-      {time || '--:--:--'} <span className="text-sm font-normal text-blue-200">WIB</span>
+    <div className="text-3xl font-semibold tracking-tight tabular-nums font-mono text-white">
+      {time || '--:--:--'} <span className="text-xs font-normal text-slate-400 font-sans tracking-normal">WIB</span>
     </div>
   );
 }

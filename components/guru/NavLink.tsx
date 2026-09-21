@@ -19,20 +19,20 @@ export default function NavLink({ href, label, children, highlight }: NavLinkPro
     return (
       <Link
         href={href}
-        className="flex flex-col items-center -mt-5 group"
+        className="flex flex-col items-center justify-center py-1.5 px-3 rounded-lg transition"
       >
         <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-105 ${
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
             isActive
-              ? 'bg-blue-600 shadow-blue-500/40 ring-4 ring-blue-100'
-              : 'bg-blue-600 shadow-blue-500/25'
+              ? 'bg-slate-900 text-white'
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
           {children}
         </div>
         <span
-          className={`text-[10px] font-semibold mt-1 ${
-            isActive ? 'text-blue-600' : 'text-slate-500'
+          className={`text-[10px] font-medium mt-1 ${
+            isActive ? 'text-slate-900 font-semibold' : 'text-slate-500'
           }`}
         >
           {label}
@@ -44,14 +44,14 @@ export default function NavLink({ href, label, children, highlight }: NavLinkPro
   return (
     <Link
       href={href}
-      className={`flex flex-col items-center py-1 px-3 rounded-xl transition ${
+      className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-lg transition ${
         isActive
-          ? 'text-blue-600 font-semibold'
-          : 'text-slate-400 hover:text-slate-600'
+          ? 'text-slate-900 font-semibold'
+          : 'text-slate-500 hover:text-slate-900'
       }`}
     >
-      <div className="mb-0.5">{children}</div>
-      <span className="text-[11px]">{label}</span>
+      <div className="w-9 h-9 flex items-center justify-center mb-0.5">{children}</div>
+      <span className="text-[10px] font-medium leading-none">{label}</span>
     </Link>
   );
 }

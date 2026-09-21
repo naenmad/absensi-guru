@@ -77,26 +77,21 @@ export default function ScheduleManagerClient({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md uppercase tracking-wider">
-              Langkah 3
-            </span>
-            <h1 className="text-2xl font-bold text-slate-800">Kelola Jadwal Pelajaran</h1>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Hubungkan Guru Pengampu, Mata Pelajaran, dan Ruang Kelas ber-QR berdasarkan hari dan jam
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Jadwal Pelajaran</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Pengaturan jadwal mengajar guru, mata pelajaran, dan ruangan kelas
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           {rooms.length === 0 && (
             <Link
               href="/admin/ruangan"
-              className="text-xs text-amber-700 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200"
+              className="text-xs text-amber-800 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200"
             >
-              ⚠️ Harap tambah Ruang Kelas dahulu
+              Tambah Ruangan Dahulu
             </Link>
           )}
 
@@ -106,10 +101,10 @@ export default function ScheduleManagerClient({
               setShowAddModal(true);
             }}
             disabled={rooms.length === 0 || subjects.length === 0}
-            className="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer disabled:opacity-50"
+            className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition cursor-pointer disabled:opacity-50"
           >
             <Plus className="w-4 h-4" />
-            <span>Tambah Jadwal Baru</span>
+            <span>Tambah Jadwal</span>
           </button>
         </div>
       </div>
@@ -118,10 +113,10 @@ export default function ScheduleManagerClient({
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
         <button
           onClick={() => setSelectedHari('Semua')}
-          className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+          className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
             selectedHari === 'Semua'
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+              ? 'bg-slate-900 text-white shadow-xs'
+              : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
           }`}
         >
           Semua Hari ({initialSchedules.length})
@@ -132,10 +127,10 @@ export default function ScheduleManagerClient({
             <button
               key={h}
               onClick={() => setSelectedHari(h)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
                 selectedHari === h
-                  ? 'bg-blue-600 text-white shadow-sm'
-                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200/80'
               }`}
             >
               {h} ({count})
@@ -145,16 +140,16 @@ export default function ScheduleManagerClient({
       </div>
 
       {/* Tabel Jadwal */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 uppercase tracking-wider font-semibold">
-                <th className="py-4 px-6">Hari & Jam</th>
-                <th className="py-4 px-6">Mata Pelajaran</th>
-                <th className="py-4 px-6">Ruang Kelas (Lokasi QR)</th>
-                <th className="py-4 px-6">Guru Pengampu</th>
-                <th className="py-4 px-6 text-right">Aksi</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 uppercase tracking-wider font-semibold">
+                <th className="py-3 px-5">Hari & Jam</th>
+                <th className="py-3 px-5">Mata Pelajaran</th>
+                <th className="py-3 px-5">Ruang Kelas</th>
+                <th className="py-3 px-5">Guru Pengampu</th>
+                <th className="py-3 px-5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
@@ -172,18 +167,18 @@ export default function ScheduleManagerClient({
 
                   return (
                     <tr key={sch.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-4 px-6">
-                        <span className="px-2.5 py-1 bg-blue-50 text-blue-700 font-bold rounded-lg text-xs mr-2">
+                      <td className="py-3.5 px-5">
+                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-[11px] border border-slate-200/60 mr-2">
                           {sch.hari}
                         </span>
-                        <span className="font-semibold text-slate-700 font-mono">
-                          {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)} WIB
+                        <span className="font-mono text-slate-700 text-xs">
+                          {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)}
                         </span>
                       </td>
 
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800 flex items-center gap-2">
-                          <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+                      <td className="py-3.5 px-5">
+                        <div className="font-semibold text-slate-900 flex items-center gap-2">
+                          <BookOpen className="w-3.5 h-3.5 text-slate-400" />
                           <span>{sub.nama_mapel || 'Mapel'}</span>
                         </div>
                         {sub.kode_mapel && (
@@ -193,32 +188,30 @@ export default function ScheduleManagerClient({
                         )}
                       </td>
 
-                      <td className="py-4 px-6">
-                        <div className="font-semibold text-slate-800 flex items-center gap-1.5">
-                          <School className="w-3.5 h-3.5 text-purple-600" />
-                          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded-md font-bold">
-                            {room.nama_ruangan || 'Ruangan'}
-                          </span>
+                      <td className="py-3.5 px-5">
+                        <div className="font-medium text-slate-800 flex items-center gap-1.5">
+                          <School className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{room.nama_ruangan || 'Ruangan'}</span>
                         </div>
                         {room.gedung && (
-                          <span className="text-[10px] text-slate-400 block pl-5 mt-0.5">
+                          <span className="text-[10px] text-slate-400 block pl-5">
                             {room.gedung}
                           </span>
                         )}
                       </td>
 
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">{teacher.nama || 'Guru'}</div>
+                      <td className="py-3.5 px-5">
+                        <div className="font-semibold text-slate-900">{teacher.nama || 'Guru'}</div>
                         <div className="text-[10px] text-slate-400">
                           {teacher.nip ? `NIP. ${teacher.nip}` : teacher.jabatan || '-'}
                         </div>
                       </td>
 
-                      <td className="py-4 px-6 text-right">
+                      <td className="py-3.5 px-5 text-right">
                         <button
                           onClick={() => handleDeleteSchedule(sch.id)}
                           disabled={deleteId === sch.id}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
                           title="Hapus Jadwal"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -235,26 +228,26 @@ export default function ScheduleManagerClient({
 
       {/* MODAL TAMBAH JADWAL */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-800">Tambah Jadwal Pelajaran</h3>
-                <p className="text-xs text-slate-400">
-                  Hubungkan Guru, Mata Pelajaran, dan Ruang Kelas ber-QR
+                <h3 className="text-sm font-bold text-slate-900">Tambah Jadwal Pelajaran</h3>
+                <p className="text-xs text-slate-500">
+                  Hubungkan Guru, Mata Pelajaran, dan Ruang Kelas
                 </p>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {feedback && (
               <div
-                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 border ${
+                className={`p-3 rounded-lg text-xs font-medium flex items-center gap-2 border ${
                   feedback.success
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : 'bg-red-50 text-red-800 border-red-200'
@@ -265,13 +258,13 @@ export default function ScheduleManagerClient({
               </div>
             )}
 
-            <form onSubmit={handleCreateSchedule} className="space-y-4">
+            <form onSubmit={handleCreateSchedule} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Guru Pengampu *</label>
                 <select
                   name="teacher_id"
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 >
                   <option value="">-- Pilih Guru --</option>
                   {teachers.map((t) => (
@@ -285,12 +278,12 @@ export default function ScheduleManagerClient({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Mata Pelajaran (Langkah 1) *
+                    Mata Pelajaran *
                   </label>
                   <select
                     name="subject_id"
                     required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   >
                     <option value="">-- Pilih Mapel --</option>
                     {subjects.map((s) => (
@@ -303,14 +296,14 @@ export default function ScheduleManagerClient({
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Ruang Kelas (Langkah 2) *
+                    Ruang Kelas *
                   </label>
                   <select
                     name="room_id"
                     required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   >
-                    <option value="">-- Pilih Ruang Kelas --</option>
+                    <option value="">-- Pilih Ruang --</option>
                     {rooms.map((r) => (
                       <option key={r.id} value={r.id}>
                         {r.nama_ruangan} {r.gedung ? `(${r.gedung})` : ''}
@@ -325,7 +318,7 @@ export default function ScheduleManagerClient({
                 <select
                   name="hari"
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 >
                   {HARI_LIST.map((h) => (
                     <option key={h} value={h}>
@@ -343,7 +336,7 @@ export default function ScheduleManagerClient({
                     name="jam_mulai"
                     required
                     defaultValue="07:30"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
                 <div>
@@ -353,7 +346,7 @@ export default function ScheduleManagerClient({
                     name="jam_selesai"
                     required
                     defaultValue="09:00"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
               </div>
@@ -362,16 +355,16 @@ export default function ScheduleManagerClient({
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  className="px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Simpan Jadwal</span>}
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <span>Simpan Jadwal</span>}
                 </button>
               </div>
             </form>

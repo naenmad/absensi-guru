@@ -13,7 +13,7 @@ export async function GET() {
     if (error || !settings) {
       // Return default data jika database belum di-seed
       return NextResponse.json({
-        nama_sekolah: 'SMK Negeri 1 Teladan',
+        nama_sekolah: 'SMP Negeri 8 Karawang Barat',
         latitude: -6.2088,
         longitude: 106.8456,
         radius_meters: 100,
@@ -26,7 +26,7 @@ export async function GET() {
     return NextResponse.json(settings);
   } catch {
     return NextResponse.json({
-      nama_sekolah: 'SMK Negeri 1 Teladan',
+      nama_sekolah: 'SMP Negeri 8 Karawang Barat',
       latitude: -6.2088,
       longitude: 106.8456,
       radius_meters: 100,

@@ -54,18 +54,18 @@ ALTER TABLE public.room_attendances ENABLE ROW LEVEL SECURITY;
 -- Policies
 CREATE POLICY "Allow read subjects" ON public.subjects FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow admin manage subjects" ON public.subjects FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 CREATE POLICY "Allow read rooms" ON public.rooms FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow admin manage rooms" ON public.rooms FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 CREATE POLICY "Allow read schedules" ON public.schedules FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Allow admin manage schedules" ON public.schedules FOR ALL TO authenticated
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (public.is_admin());
 
 CREATE POLICY "Allow read room attendances" ON public.room_attendances FOR SELECT TO authenticated
-  USING (teacher_id = auth.uid() OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'ADMIN'));
+  USING (teacher_id = auth.uid() OR public.is_admin());
 CREATE POLICY "Allow teachers insert room attendances" ON public.room_attendances FOR INSERT TO authenticated
   WITH CHECK (teacher_id = auth.uid());
 CREATE POLICY "Allow teachers update room attendances" ON public.room_attendances FOR UPDATE TO authenticated

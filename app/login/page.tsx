@@ -31,62 +31,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-md">
-      {/* Header Card */}
-      <div className="bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
-            <School className="w-8 h-8" />
+    <div className="w-full max-w-sm">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm p-7">
+        <div className="flex flex-col items-center text-center mb-6">
+          <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center mb-3 shadow-xs">
+            <School className="w-6 h-6 text-sky-400" />
           </div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Presensi Guru</h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Sistem Informasi Kehadiran Pendidik & Tenaga Kependidikan
+          <h1 className="text-lg font-bold text-slate-900 tracking-tight">SMP Negeri 8 Karawang Barat</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Sistem Presensi Pendidik & Tenaga Kependidikan
           </p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 text-red-700 text-sm animate-shake">
-            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="mb-5 p-3 rounded-lg bg-red-50 border border-red-200 flex items-start gap-2.5 text-red-700 text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               NIP atau Email
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <User className="w-5 h-5" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <User className="w-4 h-4" />
               </div>
               <input
                 type="text"
                 name="identifier"
                 required
-                placeholder="Masukkan NIP atau Email akun Anda"
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                placeholder="Masukkan NIP atau Email"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition placeholder:text-slate-400"
               />
             </div>
-            <span className="text-xs text-slate-400 mt-1 block">
-              Guru dapat login menggunakan NIP resmi atau alamat email.
+            <span className="text-[11px] text-slate-400 mt-1 block">
+              Gunakan NIP resmi atau alamat email terdaftar
             </span>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
               Kata Sandi
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                <Lock className="w-5 h-5" />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                <Lock className="w-4 h-4" />
               </div>
               <input
                 type="password"
                 name="password"
                 required
-                placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
+                placeholder="Masukkan kata sandi"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-lg text-slate-900 text-xs focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -94,29 +93,29 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg text-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-xs"
           >
             {loading ? (
               <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Memverifikasi Akun...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-slate-300" />
+                <span>Memverifikasi...</span>
               </>
             ) : (
-              <span>Masuk ke Sistem</span>
+              <span>Masuk</span>
             )}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-          <p className="text-xs text-slate-500 leading-relaxed">
-            Belum memiliki akun atau lupa kata sandi? Silakan hubungi bagian{' '}
-            <span className="font-semibold text-slate-700">Tata Usaha / Admin Sekolah</span>.
+        <div className="mt-6 pt-5 border-t border-slate-100 text-center">
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            Kendala akses akun? Hubungi bagian{' '}
+            <span className="font-semibold text-slate-700">Tata Usaha</span>.
           </p>
         </div>
       </div>
 
-      <div className="text-center mt-6 text-xs text-slate-400">
-        &copy; {new Date().getFullYear()} Sistem Presensi Sekolah. All rights reserved.
+      <div className="text-center mt-5 text-[11px] text-slate-400">
+        Sistem Presensi SMP Negeri 8 Karawang Barat
       </div>
     </div>
   );

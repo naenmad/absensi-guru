@@ -64,16 +64,11 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-bold rounded-md uppercase tracking-wider">
-              Langkah 2
-            </span>
-            <h1 className="text-2xl font-bold text-slate-800">Kelola Ruang Kelas & QR Code</h1>
-          </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Daftarkan ruangan belajar dan cetak QR Code unik untuk ditempel di setiap pintu/dinding ruang kelas
+          <h1 className="text-xl font-bold text-slate-900 tracking-tight">Ruang Kelas & QR Code</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Daftar ruangan belajar dan cetak QR Code unik untuk presensi mengajar
           </p>
         </div>
 
@@ -82,38 +77,38 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
             setFeedback(null);
             setShowAddModal(true);
           }}
-          className="py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 transition cursor-pointer self-start md:self-auto"
+          className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs transition cursor-pointer self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
-          <span>Tambah Ruang Kelas</span>
+          <span>Tambah Ruangan</span>
         </button>
       </div>
 
       {/* Grid Ruang Kelas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {initialRooms.length === 0 ? (
-          <div className="col-span-full p-12 bg-white rounded-3xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-            Belum ada ruang kelas terdaftar. Klik &quot;Tambah Ruang Kelas&quot; untuk membuat ruangan dan QR Code-nya.
+          <div className="col-span-full p-12 bg-white rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+            Belum ada ruang kelas terdaftar. Klik &quot;Tambah Ruangan&quot; untuk mendaftarkan ruangan.
           </div>
         ) : (
           initialRooms.map((room) => (
             <div
               key={room.id}
-              className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md transition space-y-4"
+              className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition space-y-4"
             >
               <div>
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                      Ruang Fisik
+                    <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-medium uppercase tracking-wider border border-slate-200/60">
+                      Ruang Belajar
                     </span>
-                    <h3 className="text-xl font-extrabold text-slate-800 mt-1">{room.nama_ruangan}</h3>
+                    <h3 className="text-base font-bold text-slate-900 mt-1.5">{room.nama_ruangan}</h3>
                   </div>
 
                   <button
                     onClick={() => handleDelete(room.id, room.nama_ruangan)}
                     disabled={deleteId === room.id}
-                    className="p-1.5 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
                     title="Hapus Ruangan"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -121,8 +116,8 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                 </div>
 
                 {room.gedung && (
-                  <div className="flex items-center gap-1 text-xs text-blue-600 font-semibold mt-1.5">
-                    <MapPin className="w-3.5 h-3.5" />
+                  <div className="flex items-center gap-1 text-xs text-slate-600 font-medium mt-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
                     <span>{room.gedung}</span>
                   </div>
                 )}
@@ -131,7 +126,7 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                   <p className="text-xs text-slate-500 mt-2 leading-relaxed">{room.deskripsi}</p>
                 )}
 
-                <div className="mt-3 pt-3 border-t border-slate-50 flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
                   <QrCode className="w-3.5 h-3.5 text-slate-400" />
                   <span className="truncate">{room.kode_qr}</span>
                 </div>
@@ -140,10 +135,10 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
               {/* Tombol Cetak QR Code Ruangan */}
               <button
                 onClick={() => setSelectedQRRoom(room)}
-                className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-slate-900/15 transition cursor-pointer"
+                className="w-full py-2 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium flex items-center justify-center gap-2 shadow-xs transition cursor-pointer"
               >
-                <Printer className="w-4 h-4 text-purple-400" />
-                <span>🖨️ Cetak QR Code Ruangan</span>
+                <Printer className="w-3.5 h-3.5 text-slate-500" />
+                <span>Cetak Lembar QR</span>
               </button>
             </div>
           ))
@@ -152,24 +147,24 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
 
       {/* MODAL TAMBAH RUANG KELAS */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
-                <h3 className="text-base font-bold text-slate-800">Tambah Ruang Kelas Baru</h3>
-                <p className="text-xs text-slate-400">Sistem akan otomatis men-generate QR Code unik untuk ruangan ini</p>
+                <h3 className="text-sm font-bold text-slate-900">Tambah Ruang Kelas</h3>
+                <p className="text-xs text-slate-500">Kode QR otomatis digenerate untuk ruangan ini</p>
               </div>
               <button
                 onClick={() => setShowAddModal(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {feedback && (
               <div
-                className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 border ${
+                className={`p-3 rounded-lg text-xs font-medium flex items-center gap-2 border ${
                   feedback.success
                     ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
                     : 'bg-red-50 text-red-800 border-red-200'
@@ -180,7 +175,7 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
               </div>
             )}
 
-            <form onSubmit={handleCreate} className="space-y-4">
+            <form onSubmit={handleCreate} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Nama Ruangan *
@@ -189,8 +184,8 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                   type="text"
                   name="nama_ruangan"
                   required
-                  placeholder="Contoh: Ruang 101, Lab Komputer 1, Studio Seni"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contoh: Ruang 101, Lab Komputer"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                 />
               </div>
 
@@ -202,19 +197,19 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                   type="text"
                   name="gedung"
                   placeholder="Contoh: Gedung A Lantai 2"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Keterangan / Fasilitas (Opsional)
+                  Keterangan (Opsional)
                 </label>
                 <textarea
                   name="deskripsi"
                   rows={2}
-                  placeholder="Contoh: Kapasitas 36 siswa, dilengkapi proyektor LCD"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Contoh: Kapasitas 36 siswa"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                 />
               </div>
 
@@ -222,16 +217,16 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-slate-200 rounded-xl text-xs text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  className="px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md shadow-blue-500/20 cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                 >
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <span>Simpan & Buat QR Ruangan</span>}
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <span>Simpan Ruangan</span>}
                 </button>
               </div>
             </form>

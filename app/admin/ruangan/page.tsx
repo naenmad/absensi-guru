@@ -13,7 +13,7 @@ export default async function RuanganPage() {
   return (
     <RoomManagerClient
       initialRooms={roomsRes.data || []}
-      schoolName={settingsRes.data?.nama_sekolah || 'SMK Negeri 1 Teladan'}
+      schoolName={settingsRes.data?.nama_sekolah || 'SMP Negeri 8 Karawang Barat'}
     />
   );
 }

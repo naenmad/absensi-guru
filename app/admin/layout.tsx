@@ -44,68 +44,77 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex">
+    <div className="min-h-screen bg-slate-50 flex font-sans">
       {/* Sidebar Desktop */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 border-r border-slate-800">
+      <aside className="w-64 bg-slate-950 text-slate-200 flex flex-col shrink-0 border-r border-slate-800/80">
         {/* Brand */}
-        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
-            <School className="w-6 h-6" />
+        <div className="p-5 border-b border-slate-800/80 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-white shrink-0">
+            <School className="w-5 h-5 text-sky-400" />
           </div>
-          <div>
-            <h1 className="font-bold text-sm text-white tracking-wide">
-              {settings?.nama_sekolah || 'Admin Presensi'}
+          <div className="min-w-0">
+            <h1 className="font-semibold text-xs text-white truncate tracking-tight">
+              {settings?.nama_sekolah || 'SMP Negeri 8 Karawang Barat'}
             </h1>
-            <span className="text-[11px] text-blue-400 font-medium">Panel Administrasi</span>
+            <span className="text-[11px] text-slate-400">Portal Administrasi</span>
           </div>
         </div>
 
         {/* Nav Links */}
-        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+            Menu Utama
+          </div>
           <AdminSidebarLink href="/admin" label="Dashboard Ringkasan">
-            <LayoutDashboard className="w-5 h-5" />
+            <LayoutDashboard className="w-4 h-4" />
           </AdminSidebarLink>
 
           <AdminSidebarLink href="/admin/guru" label="Data Guru & Akun">
-            <Users className="w-5 h-5" />
+            <Users className="w-4 h-4" />
           </AdminSidebarLink>
 
-          <AdminSidebarLink href="/admin/mapel" label="1. Mata Pelajaran">
-            <BookOpen className="w-5 h-5" />
+          <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+            Akademik & Ruangan
+          </div>
+          <AdminSidebarLink href="/admin/mapel" label="Mata Pelajaran">
+            <BookOpen className="w-4 h-4" />
           </AdminSidebarLink>
 
-          <AdminSidebarLink href="/admin/ruangan" label="2. Ruang Kelas & QR">
-            <QrCode className="w-5 h-5" />
+          <AdminSidebarLink href="/admin/ruangan" label="Ruang Kelas & QR">
+            <QrCode className="w-4 h-4" />
           </AdminSidebarLink>
 
-          <AdminSidebarLink href="/admin/jadwal-pelajaran" label="3. Jadwal Pelajaran">
-            <CalendarDays className="w-5 h-5" />
+          <AdminSidebarLink href="/admin/jadwal-pelajaran" label="Jadwal Pelajaran">
+            <CalendarDays className="w-4 h-4" />
           </AdminSidebarLink>
 
+          <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+            Konfigurasi & Rekap
+          </div>
           <AdminSidebarLink href="/admin/jadwal" label="Lokasi & Jam Kerja">
-            <MapPin className="w-5 h-5" />
+            <MapPin className="w-4 h-4" />
           </AdminSidebarLink>
 
           <AdminSidebarLink href="/admin/persetujuan" label="Persetujuan Izin">
-            <FileCheck2 className="w-5 h-5" />
+            <FileCheck2 className="w-4 h-4" />
           </AdminSidebarLink>
 
           <AdminSidebarLink href="/admin/laporan" label="Rekapitulasi Laporan">
-            <FileSpreadsheet className="w-5 h-5" />
+            <FileSpreadsheet className="w-4 h-4" />
           </AdminSidebarLink>
         </nav>
 
         {/* Footer Admin Profile */}
-        <div className="p-4 border-t border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-9 h-9 rounded-xl bg-slate-800 text-slate-300 font-bold flex items-center justify-center text-xs shrink-0 border border-slate-700">
+        <div className="p-3.5 border-t border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="w-8 h-8 rounded-lg bg-slate-900 text-slate-300 font-semibold flex items-center justify-center text-xs shrink-0 border border-slate-800">
               {profile?.nama?.charAt(0) || 'A'}
             </div>
             <div className="truncate">
-              <p className="text-xs font-semibold text-white truncate">
+              <p className="text-xs font-medium text-slate-200 truncate">
                 {profile?.nama || 'Administrator'}
               </p>
-              <p className="text-[10px] text-slate-400 truncate">{profile?.email || 'admin'}</p>
+              <p className="text-[10px] text-slate-500 truncate">{profile?.email || 'admin'}</p>
             </div>
           </div>
 
@@ -113,7 +122,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <button
               type="submit"
               title="Keluar"
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-900 rounded-lg transition cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -124,24 +133,25 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
-        <header className="h-16 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-20">
-          <div>
-            <span className="text-xs font-medium text-slate-400">
-              Tahun Ajaran {new Date().getFullYear()} / {new Date().getFullYear() + 1}
-            </span>
-            <h2 className="text-sm font-bold text-slate-800">
+        <header className="h-14 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-semibold text-slate-900">
               {new Date().toLocaleDateString('id-ID', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
               })}
-            </h2>
+            </span>
+            <span className="text-slate-300">•</span>
+            <span className="text-xs text-slate-500">
+              Tahun Ajaran {new Date().getFullYear()} / {new Date().getFullYear() + 1}
+            </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-semibold border border-blue-200">
-              Role: Admin Sekolah
+          <div className="flex items-center gap-2.5">
+            <span className="px-2.5 py-1 bg-slate-100 text-slate-700 rounded-md text-xs font-medium border border-slate-200">
+              Admin Sekolah
             </span>
           </div>
         </header>

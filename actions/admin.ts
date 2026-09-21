@@ -54,6 +54,17 @@ export async function createTeacherAction(prevState: any, formData: FormData) {
     });
 
     if (authError || !authData.user) {
+      if (
+        authError?.message?.includes('Bearer token') ||
+        authError?.message?.includes('jwt') ||
+        authError?.status === 401 ||
+        authError?.status === 403
+      ) {
+        return {
+          error:
+            'Kunci SUPABASE_SERVICE_ROLE_KEY di .env.local belum valid. Harap gunakan Service Role Secret Key dari Supabase Dashboard (Project Settings -> API -> service_role secret), bukan Anon/Publishable Key.',
+        };
+      }
       return { error: authError?.message || 'Gagal membuat akun guru.' };
     }
 

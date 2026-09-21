@@ -65,48 +65,48 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-slate-800">Pengaturan Lokasi & Jam Kerja</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Tentukan koordinat pusat sekolah, radius geofence presensi, serta jadwal jam masuk/pulang
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Lokasi & Jam Kerja</h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Atur koordinat pusat sekolah, radius jangkauan presensi, dan jadwal operasional
         </p>
       </div>
 
       {feedback && (
         <div
-          className={`p-4 rounded-2xl text-xs font-semibold flex items-start gap-2 border ${
+          className={`p-3 rounded-lg text-xs font-medium flex items-start gap-2 border ${
             feedback.success
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
               : 'bg-red-50 text-red-800 border-red-200'
           }`}
         >
           {feedback.success ? (
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
           ) : (
-            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
           )}
           <span>{feedback.message || feedback.error}</span>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <input type="hidden" name="id" value={initialSettings?.id || ''} />
 
         {/* Seksi 1: Profil Sekolah */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm border-b border-slate-100 pb-3">
-            <Building className="w-4 h-4 text-blue-600" />
+        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs border-b border-slate-100 pb-3">
+            <Building className="w-4 h-4 text-slate-500" />
             <span>Identitas Sekolah</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Nama Sekolah</label>
               <input
                 type="text"
                 name="nama_sekolah"
                 required
-                defaultValue={initialSettings?.nama_sekolah || 'SMK Negeri 1 Teladan'}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                defaultValue={initialSettings?.nama_sekolah || 'SMP Negeri 8 Karawang Barat'}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -116,32 +116,32 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 type="text"
                 name="alamat"
                 defaultValue={initialSettings?.alamat || 'Jl. Pendidikan No. 1'}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
           </div>
         </div>
 
         {/* Seksi 2: Koordinat Geofence */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
+        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
-              <MapPin className="w-4 h-4 text-blue-600" />
-              <span>Titik Koordinat & Radius Geofence</span>
+            <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs">
+              <MapPin className="w-4 h-4 text-slate-500" />
+              <span>Titik Koordinat & Radius Presensi</span>
             </div>
 
             <button
               type="button"
               onClick={detectCurrentLocation}
               disabled={gpsDetecting}
-              className="py-1.5 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
+              className="py-1.5 px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md text-xs font-medium flex items-center gap-1.5 transition cursor-pointer border border-slate-200/60"
             >
               <Navigation className={`w-3.5 h-3.5 ${gpsDetecting ? 'animate-spin' : ''}`} />
-              <span>Gunakan Lokasi Saya Saat Ini</span>
+              <span>Gunakan Lokasi Saat Ini</span>
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Garis Lintang (Latitude)
@@ -153,7 +153,7 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 required
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -168,7 +168,7 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 required
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -183,23 +183,23 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 min={10}
                 max={1000}
                 defaultValue={initialSettings?.radius_meters || 100}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Guru hanya dapat absen dalam jarak ini dari titik pusat.
+                Batas jarak maksimal guru dari pusat sekolah
               </span>
             </div>
           </div>
         </div>
 
         {/* Seksi 3: Jam Masuk & Pulang */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm space-y-4">
-          <div className="flex items-center gap-2 text-slate-800 font-bold text-sm border-b border-slate-100 pb-3">
-            <Clock className="w-4 h-4 text-blue-600" />
+        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex items-center gap-2 text-slate-900 font-semibold text-xs border-b border-slate-100 pb-3">
+            <Clock className="w-4 h-4 text-slate-500" />
             <span>Jadwal Jam Kerja & Toleransi</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Jam Masuk</label>
               <input
@@ -207,7 +207,7 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 name="jam_masuk"
                 required
                 defaultValue={initialSettings?.jam_masuk || '07:00'}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
@@ -218,13 +218,13 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 name="jam_pulang"
                 required
                 defaultValue={initialSettings?.jam_pulang || '15:00'}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Toleransi Terlambat (Menit)
+                Toleransi Keterlambatan (Menit)
               </label>
               <input
                 type="number"
@@ -233,10 +233,10 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 min={0}
                 max={120}
                 defaultValue={initialSettings?.toleransi_terlambat_menit ?? 15}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
               <span className="text-[10px] text-slate-400 mt-1 block">
-                Presensi setelah jam masuk + toleransi akan dicatat Terlambat.
+                Presensi setelah jam masuk + toleransi dicatat Terlambat
               </span>
             </div>
           </div>
@@ -247,17 +247,17 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
           <button
             type="submit"
             disabled={loading}
-            className="py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-blue-500/25 transition cursor-pointer disabled:opacity-50"
+            className="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-2 shadow-xs transition cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Menyimpan Pengaturan...</span>
+                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+                <span>Menyimpan...</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>Simpan Perubahan Pengaturan</span>
+                <span>Simpan Pengaturan</span>
               </>
             )}
           </button>
