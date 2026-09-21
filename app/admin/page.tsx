@@ -11,10 +11,11 @@ import {
   Camera,
 } from 'lucide-react';
 import Link from 'next/link';
+import { getWIBDateString } from '@/lib/date';
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getWIBDateString(new Date());
 
   // 1. Ambil data guru
   const { data: allTeachers } = await supabase

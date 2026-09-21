@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { getWIBDateString, getWIBDayName, formatTimeWIB } from '@/lib/date';
 
 /**
  * 1. KELOLA MATA PELAJARAN
@@ -147,10 +148,9 @@ export async function submitRoomAttendanceAction(kode_qr: string, materi_pembela
     return { error: 'QR Code tidak valid atau Ruangan tidak ditemukan dalam sistem.' };
   }
 
-  // 2. Tentukan nama hari saat ini (Bahasa Indonesia)
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const todayDayName = days[new Date().getDay()];
-  const todayDate = new Date().toISOString().split('T')[0];
+  // 2. Tentukan nama hari & tanggal WIB saat ini
+  const todayDayName = getWIBDayName(new Date());
+  const todayDate = getWIBDateString(new Date());
 
   // 3. Cari jadwal mengajar guru di ruangan ini pada hari ini
   const { data: activeSchedule } = await supabase
@@ -161,13 +161,35 @@ export async function submitRoomAttendanceAction(kode_qr: string, materi_pembela
     .eq('hari', todayDayName)
     .maybeSingle();
 
-  // 4. Catat presensi masuk ruangan ke tabel room_attendances
+  // 4. Cek apakah guru sudah pernah check-in di ruangan ini hari ini
+  const { data: existingRoomAtt } = await supabase
+    .from('room_attendances')
+    .select('*')
+    .eq('room_id', room.id)
+    .eq('teacher_id', user.id)
+    .eq('tanggal', todayDate)
+    .maybeSingle();
+
+  if (existingRoomAtt) {
+    return {
+      success: true,
+      alreadyCheckedIn: true,
+      nama_ruangan: room.nama_ruangan,
+      gedung: room.gedung || 'Ruang Kelas',
+      nama_mapel: (activeSchedule as any)?.subjects?.nama_mapel || 'Sesi Pelajaran',
+      jam: formatTimeWIB(existingRoomAtt.jam_masuk),
+      message: `Anda sudah tercatat check-in di ${room.nama_ruangan} hari ini pada pukul ${formatTimeWIB(existingRoomAtt.jam_masuk)}.`,
+    };
+  }
+
+  // 5. Catat presensi masuk ruangan ke tabel room_attendances
+  const now = new Date();
   const { error: insertErr } = await supabase.from('room_attendances').insert({
     room_id: room.id,
     teacher_id: user.id,
     schedule_id: activeSchedule?.id || null,
     tanggal: todayDate,
-    jam_masuk: new Date().toISOString(),
+    jam_masuk: now.toISOString(),
     materi_pembelajaran: materi_pembelajaran || null,
   });
 
@@ -183,7 +205,7 @@ export async function submitRoomAttendanceAction(kode_qr: string, materi_pembela
     nama_ruangan: room.nama_ruangan,
     gedung: room.gedung || 'Ruang Kelas',
     nama_mapel: (activeSchedule as any)?.subjects?.nama_mapel || 'Sesi Pelajaran',
-    jam: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+    jam: formatTimeWIB(now.toISOString()),
     message: `Presensi KBM di ${room.nama_ruangan} berhasil dicatat!`,
   };
 }

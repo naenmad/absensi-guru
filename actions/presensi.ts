@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { isWithinSchoolRadius } from '@/lib/geo';
+import { getWIBDateString, formatTimeWIB, TIMEZONE_WIB } from '@/lib/date';
 import { revalidatePath } from 'next/cache';
 
 interface PresensiPayload {
@@ -28,7 +29,44 @@ export async function submitPresensiAction(payload: PresensiPayload) {
     return { error: 'Sesi login telah berakhir. Silakan login kembali.' };
   }
 
-  // 1. Ambil pengaturan sekolah untuk verifikasi geofence & jam masuk
+  const now = new Date();
+  const todayDate = getWIBDateString(now);
+
+  // 1. Cek apakah sudah ada catatan presensi hari ini
+  const { data: existingAttendance } = await supabase
+    .from('attendances')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('tanggal', todayDate)
+    .maybeSingle();
+
+  // 2. Validasi pencegahan presensi ganda
+  if (tipe === 'MASUK') {
+    if (existingAttendance?.jam_masuk) {
+      return {
+        error: `Anda sudah melakukan presensi masuk hari ini pada pukul ${formatTimeWIB(existingAttendance.jam_masuk)}. Presensi masuk tidak dapat diulang.`,
+      };
+    }
+    if (existingAttendance?.status === 'IZIN' || existingAttendance?.status === 'SAKIT') {
+      return {
+        error: `Anda tercatat sedang ${existingAttendance.status} hari ini. Tidak perlu melakukan presensi masuk.`,
+      };
+    }
+  } else {
+    // PULANG
+    if (!existingAttendance || !existingAttendance.jam_masuk) {
+      return {
+        error: 'Anda belum melakukan presensi masuk hari ini. Silakan lakukan presensi masuk terlebih dahulu sebelum presensi pulang.',
+      };
+    }
+    if (existingAttendance.jam_pulang) {
+      return {
+        error: `Anda sudah melakukan presensi pulang hari ini pada pukul ${formatTimeWIB(existingAttendance.jam_pulang)}. Presensi pulang tidak dapat diulang.`,
+      };
+    }
+  }
+
+  // 3. Ambil pengaturan sekolah untuk verifikasi geofence & jam masuk
   const { data: settings, error: settingsError } = await supabase
     .from('school_settings')
     .select('*')
@@ -39,7 +77,7 @@ export async function submitPresensiAction(payload: PresensiPayload) {
     return { error: 'Pengaturan lokasi sekolah belum dikonfigurasi oleh Admin.' };
   }
 
-  // 2. Validasi Geofencing
+  // 4. Validasi Geofencing
   const geoCheck = isWithinSchoolRadius(
     latitude,
     longitude,
@@ -55,13 +93,12 @@ export async function submitPresensiAction(payload: PresensiPayload) {
     };
   }
 
-  // 3. Upload Foto Selfie ke Supabase Storage
+  // 5. Upload Foto Selfie ke Supabase Storage
   let fotoUrl = '';
   try {
     const base64Data = fotoBase64.replace(/^data:image\/\w+;base64,/, '');
     const buffer = Buffer.from(base64Data, 'base64');
-    const todayStr = new Date().toISOString().split('T')[0];
-    const fileName = `${user.id}/${todayStr}_${tipe.toLowerCase()}_${Date.now()}.jpg`;
+    const fileName = `${user.id}/${todayDate}_${tipe.toLowerCase()}_${Date.now()}.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from('presensi-selfie')
@@ -76,30 +113,33 @@ export async function submitPresensiAction(payload: PresensiPayload) {
       } = supabase.storage.from('presensi-selfie').getPublicUrl(fileName);
       fotoUrl = publicUrl;
     } else {
-      // Jika bucket belum siap di cloud, simpan inline / data url untuk testing lokal
       fotoUrl = fotoBase64;
     }
-  } catch (err) {
+  } catch {
     fotoUrl = fotoBase64;
   }
 
-  const now = new Date();
-  const todayDate = now.toISOString().split('T')[0];
-
-  // 4. Hitung Keterlambatan untuk Presensi Masuk
+  // 6. Hitung Keterlambatan untuk Presensi Masuk (WIB)
   let statusMasuk: 'TEPAT_WAKTU' | 'TERLAMBAT' = 'TEPAT_WAKTU';
   if (tipe === 'MASUK') {
-    const [jamMasukH, jamMasukM] = settings.jam_masuk.split(':').map(Number);
+    const [jamMasukH, jamMasukM] = (settings.jam_masuk || '07:00:00').split(':').map(Number);
     const batasMenit = jamMasukH * 60 + jamMasukM + (settings.toleransi_terlambat_menit || 0);
 
-    // Waktu lokal server / WIB
-    const currentMenit = now.getHours() * 60 + now.getMinutes();
+    const nowWIB = new Intl.DateTimeFormat('en-GB', {
+      timeZone: TIMEZONE_WIB,
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    }).format(now);
+    const [currH, currM] = nowWIB.split(':').map(Number);
+    const currentMenit = currH * 60 + currM;
+
     if (currentMenit > batasMenit) {
       statusMasuk = 'TERLAMBAT';
     }
   }
 
-  // 5. Simpan ke database attendances
+  // 7. Simpan ke database attendances
   if (tipe === 'MASUK') {
     const { error: upsertError } = await supabase.from('attendances').upsert(
       {
@@ -138,6 +178,7 @@ export async function submitPresensiAction(payload: PresensiPayload) {
   }
 
   revalidatePath('/guru');
+  revalidatePath('/guru/presensi');
   revalidatePath('/guru/riwayat');
   revalidatePath('/admin');
 
@@ -145,11 +186,11 @@ export async function submitPresensiAction(payload: PresensiPayload) {
     success: true,
     tipe,
     statusMasuk,
-    waktu: now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+    waktu: formatTimeWIB(now.toISOString()),
     jarakMeters: geoCheck.distanceMeters,
     message:
       tipe === 'MASUK'
-        ? `Presensi masuk berhasil (${statusMasuk === 'TERLAMBAT' ? 'Terlambat' : 'Tepat Waktu'})`
+        ? `Presensi masuk berhasil dicatat (${statusMasuk === 'TERLAMBAT' ? 'Terlambat' : 'Tepat Waktu'})`
         : 'Presensi pulang berhasil dicatat. Selamat beristirahat!',
   };
 }

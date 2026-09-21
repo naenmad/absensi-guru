@@ -190,7 +190,44 @@ export async function reviewLeaveAction(
     return { error: error.message };
   }
 
+  // Jika disetujui, sinkronkan tanggal izin ke tabel attendances
+  if (status === 'APPROVED') {
+    const { data: leave } = await supabase
+      .from('leave_requests')
+      .select('*')
+      .eq('id', leaveId)
+      .maybeSingle();
+
+    if (leave) {
+      const start = new Date(leave.tgl_mulai);
+      const end = new Date(leave.tgl_selesai);
+      const attendancesToInsert = [];
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split('T')[0];
+        attendancesToInsert.push({
+          user_id: leave.user_id,
+          tanggal: dateStr,
+          status: leave.jenis === 'SAKIT' ? 'SAKIT' : 'IZIN',
+          catatan: leave.alasan || `Izin resmi (${leave.jenis})`,
+          updated_at: new Date().toISOString(),
+        });
+      }
+
+      if (attendancesToInsert.length > 0) {
+        await supabase
+          .from('attendances')
+          .upsert(attendancesToInsert, { onConflict: 'user_id,tanggal' });
+      }
+    }
+  }
+
   revalidatePath('/admin/persetujuan');
+  revalidatePath('/admin/laporan');
+  revalidatePath('/admin');
   revalidatePath('/guru/izin');
+  revalidatePath('/guru/presensi');
+  revalidatePath('/guru/riwayat');
+  revalidatePath('/guru');
   return { success: true };
 }

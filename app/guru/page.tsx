@@ -1,8 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, MapPin, QrCode, BookOpen } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, MapPin, QrCode, BookOpen, FileText } from 'lucide-react';
 import LiveClock from '@/components/guru/LiveClock';
+import { getWIBDateString, getWIBDayName, formatTimeWIB } from '@/lib/date';
 
 export default async function GuruDashboardPage() {
   const supabase = await createClient();
@@ -10,19 +11,17 @@ export default async function GuruDashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  // Dapatkan nama hari ini dalam Bahasa Indonesia
-  const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-  const todayDayName = days[new Date().getDay()];
+  const todayStr = getWIBDateString(new Date());
+  const todayDayName = getWIBDayName(new Date());
 
   let todayAttendance = null;
   let settings = null;
   let todaySchedules: any[] = [];
   let todayClassAttendances: any[] = [];
+  let activeLeave = null;
 
   if (user) {
-    const [attRes, setRes, schRes, roomAttRes] = await Promise.all([
+    const [attRes, setRes, schRes, roomAttRes, leaveRes] = await Promise.all([
       supabase.from('attendances').select('*').eq('user_id', user.id).eq('tanggal', todayStr).maybeSingle(),
       supabase.from('school_settings').select('*').limit(1).maybeSingle(),
       supabase
@@ -36,14 +35,27 @@ export default async function GuruDashboardPage() {
         .select('*, rooms(nama_ruangan)')
         .eq('teacher_id', user.id)
         .eq('tanggal', todayStr),
+      supabase
+        .from('leave_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'APPROVED')
+        .lte('tgl_mulai', todayStr)
+        .gte('tgl_selesai', todayStr)
+        .maybeSingle(),
     ]);
 
     todayAttendance = attRes.data;
     settings = setRes.data;
     todaySchedules = schRes.data || [];
     todayClassAttendances = roomAttRes.data || [];
+    activeLeave = leaveRes.data;
   }
 
+  const isIzinOrSakit =
+    todayAttendance?.status === 'IZIN' ||
+    todayAttendance?.status === 'SAKIT' ||
+    !!activeLeave;
   const sudahMasuk = !!todayAttendance?.jam_masuk;
   const sudahPulang = !!todayAttendance?.jam_pulang;
 
@@ -85,7 +97,15 @@ export default async function GuruDashboardPage() {
       <div className="bg-white rounded-xl p-4 border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold text-slate-900">Status Kehadiran</h3>
-          {sudahMasuk ? (
+          {isIzinOrSakit ? (
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-blue-50 text-blue-800 border border-blue-200 inline-flex items-center gap-1">
+              <FileText className="w-3 h-3" /> {todayAttendance?.status || activeLeave?.jenis || 'Izin Resmi'}
+            </span>
+          ) : sudahPulang ? (
+            <span className="text-[11px] px-2.5 py-0.5 rounded-full font-medium bg-slate-100 text-slate-800 border border-slate-200 inline-flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Presensi Lengkap
+            </span>
+          ) : sudahMasuk ? (
             <span
               className={`text-[11px] px-2.5 py-0.5 rounded-full font-medium inline-flex items-center gap-1 ${
                 todayAttendance.status_masuk === 'TERLAMBAT'
@@ -108,12 +128,7 @@ export default async function GuruDashboardPage() {
           <div className="bg-slate-50/70 rounded-lg p-3 border border-slate-200/70">
             <span className="text-[11px] font-medium text-slate-500 block mb-1">Presensi Masuk</span>
             <span className="text-base font-semibold text-slate-900 font-mono block">
-              {todayAttendance?.jam_masuk
-                ? new Date(todayAttendance.jam_masuk).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '--:--'}
+              {todayAttendance?.jam_masuk ? formatTimeWIB(todayAttendance.jam_masuk) : '--:--'}
             </span>
             <span className="text-[10px] text-slate-400 block mt-0.5">
               Jadwal: {settings?.jam_masuk ? settings.jam_masuk.slice(0, 5) : '07:00'} WIB
@@ -123,12 +138,7 @@ export default async function GuruDashboardPage() {
           <div className="bg-slate-50/70 rounded-lg p-3 border border-slate-200/70">
             <span className="text-[11px] font-medium text-slate-500 block mb-1">Presensi Pulang</span>
             <span className="text-base font-semibold text-slate-900 font-mono block">
-              {todayAttendance?.jam_pulang
-                ? new Date(todayAttendance.jam_pulang).toLocaleTimeString('id-ID', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                : '--:--'}
+              {todayAttendance?.jam_pulang ? formatTimeWIB(todayAttendance.jam_pulang) : '--:--'}
             </span>
             <span className="text-[10px] text-slate-400 block mt-0.5">
               Jadwal: {settings?.jam_pulang ? settings.jam_pulang.slice(0, 5) : '15:00'} WIB
@@ -139,7 +149,17 @@ export default async function GuruDashboardPage() {
 
       {/* Tombol Aksi Cepat Presensi */}
       <div className="space-y-2.5">
-        {!sudahMasuk ? (
+        {isIzinOrSakit ? (
+          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-xl text-blue-900 text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+              <span>Anda tercatat izin resmi hari ini.</span>
+            </div>
+            <Link href="/guru/izin" className="text-blue-700 font-semibold hover:underline text-[11px]">
+              Lihat Detail
+            </Link>
+          </div>
+        ) : !sudahMasuk ? (
           <Link
             href="/guru/presensi?type=MASUK"
             className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl shadow-xs flex items-center justify-between font-medium transition cursor-pointer"
@@ -166,25 +186,32 @@ export default async function GuruDashboardPage() {
               </div>
               <div className="text-left">
                 <span className="block text-xs font-semibold text-white">Presensi Pulang</span>
-                <span className="text-[11px] text-emerald-100 font-normal">Selesai jam kerja</span>
+                <span className="text-[11px] text-emerald-100 font-normal">Selesai jam kerja sekolah</span>
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-emerald-100" />
           </Link>
         ) : (
-          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-850 text-xs font-medium flex items-center justify-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>Presensi hari ini lengkap.</span>
+          <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Presensi hari ini telah lengkap.</span>
+            </div>
+            <Link href="/guru/presensi" className="text-emerald-800 font-semibold hover:underline text-[11px]">
+              Lihat Ringkasan
+            </Link>
           </div>
         )}
 
-        {/* Tombol Ajukan Izin */}
-        <Link
-          href="/guru/izin"
-          className="w-full py-2.5 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-medium transition shadow-xs"
-        >
-          <span>Tidak dapat hadir? Ajukan izin atau cuti</span>
-        </Link>
+        {/* Tombol Ajukan Izin (hanya jika belum izin) */}
+        {!isIzinOrSakit && !sudahMasuk && (
+          <Link
+            href="/guru/izin"
+            className="w-full py-2.5 px-3.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-medium transition shadow-xs"
+          >
+            <span>Tidak dapat hadir? Ajukan izin atau cuti</span>
+          </Link>
+        )}
       </div>
 
       {/* SEKSI JADWAL MENGAJAR & SCAN QR KELAS */}
