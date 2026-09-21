@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { logoutAction } from '@/actions/auth';
-import { Home, Camera, FileText, History, LogOut } from 'lucide-react';
+import { Home, Camera, FileText, BarChart3, Settings, LogOut } from 'lucide-react';
 import NavLink from '@/components/guru/NavLink';
 
 export const dynamic = 'force-dynamic';
@@ -63,7 +63,7 @@ export default async function GuruLayout({ children }: { children: React.ReactNo
         <main className="flex-1 p-4 overflow-y-auto">{children}</main>
 
         {/* Bottom Navigation Bar */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-2 py-1 flex items-center justify-around">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-1.5 py-1 flex items-center justify-around">
           <NavLink href="/guru" label="Beranda">
             <Home className="w-4 h-4" />
           </NavLink>
@@ -72,12 +72,16 @@ export default async function GuruLayout({ children }: { children: React.ReactNo
             <Camera className="w-4 h-4" />
           </NavLink>
 
+          <NavLink href="/guru/statistik" label="Statistik">
+            <BarChart3 className="w-4 h-4" />
+          </NavLink>
+
           <NavLink href="/guru/izin" label="Izin">
             <FileText className="w-4 h-4" />
           </NavLink>
 
-          <NavLink href="/guru/riwayat" label="Riwayat">
-            <History className="w-4 h-4" />
+          <NavLink href="/guru/pengaturan" label="Akun">
+            <Settings className="w-4 h-4" />
           </NavLink>
         </nav>
       </div>

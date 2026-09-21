@@ -13,6 +13,7 @@ import {
   CalendarDays,
   QrCode,
   BookOpen,
+  BarChart3,
 } from 'lucide-react';
 import AdminSidebarLink from '@/components/admin/AdminSidebarLink';
 
@@ -97,6 +98,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
           <AdminSidebarLink href="/admin/persetujuan" label="Persetujuan Izin">
             <FileCheck2 className="w-4 h-4" />
+          </AdminSidebarLink>
+
+          <AdminSidebarLink href="/admin/statistik" label="Statistik & Kinerja">
+            <BarChart3 className="w-4 h-4" />
           </AdminSidebarLink>
 
           <AdminSidebarLink href="/admin/laporan" label="Rekapitulasi Laporan">

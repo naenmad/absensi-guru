@@ -20,7 +20,7 @@ export default async function RiwayatGuruPage() {
   }
 
   // Ringkasan
-  const totalHadir = attendances.filter((a) => a.status === 'HADIR').length;
+  const totalTepatWaktu = attendances.filter((a) => a.status_masuk === 'TEPAT_WAKTU').length;
   const totalTerlambat = attendances.filter((a) => a.status_masuk === 'TERLAMBAT').length;
   const totalIzinSakit = attendances.filter(
     (a) => a.status === 'IZIN' || a.status === 'SAKIT'
@@ -38,7 +38,7 @@ export default async function RiwayatGuruPage() {
         <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs">
           <span className="text-[10px] text-slate-500 font-medium block mb-0.5">Tepat Waktu</span>
           <span className="text-base font-semibold font-mono text-emerald-700">
-            {totalHadir - totalTerlambat}
+            {totalTepatWaktu}
           </span>
         </div>
         <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs">
