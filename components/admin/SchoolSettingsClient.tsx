@@ -23,6 +23,7 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
 
   const [lat, setLat] = useState<string>(initialSettings?.latitude?.toString() || '-6.2088');
   const [lng, setLng] = useState<string>(initialSettings?.longitude?.toString() || '106.8456');
+  const [radius, setRadius] = useState<string>(initialSettings?.radius_meters?.toString() || '100');
 
   // Ambil lokasi perangkat admin saat ini untuk mengisi koordinat
   const detectCurrentLocation = () => {
@@ -180,14 +181,42 @@ export default function SchoolSettingsClient({ initialSettings }: { initialSetti
                 type="number"
                 name="radius_meters"
                 required
-                min={10}
-                max={1000}
-                defaultValue={initialSettings?.radius_meters || 100}
+                min={5}
+                value={radius}
+                onChange={(e) => setRadius(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
               />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Batas jarak maksimal guru dari pusat sekolah
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                <span className="text-[10px] text-slate-400">Preset Cepat:</span>
+                <button
+                  type="button"
+                  onClick={() => setRadius('100')}
+                  className="px-2 py-0.5 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-200 transition cursor-pointer"
+                >
+                  100m (Resmi)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRadius('1000')}
+                  className="px-2 py-0.5 text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 rounded border border-slate-200 transition cursor-pointer"
+                >
+                  1 km
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRadius('50000')}
+                  className="px-2 py-0.5 text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 rounded border border-amber-200 font-medium transition cursor-pointer"
+                >
+                  50 km (Testing Bebas)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRadius('500000')}
+                  className="px-2 py-0.5 text-[10px] bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded border border-emerald-200 font-medium transition cursor-pointer"
+                >
+                  500 km (Bebas Lokasi)
+                </button>
+              </div>
             </div>
           </div>
         </div>
