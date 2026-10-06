@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Room } from '@/types/database';
 import PrintableRoomQR from './PrintableRoomQR';
+import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 interface RoomManagerClientProps {
   initialRooms: Room[];
@@ -30,6 +31,25 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
   const [feedback, setFeedback] = useState<{ success?: boolean; message?: string; error?: string } | null>(
     null
   );
+
+  const {
+    paginatedData: paginatedRooms,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
+    filteredCount,
+    startIndex,
+    endIndex,
+    searchQuery,
+    setSearchQuery,
+  } = useDataTable<Room>({
+    data: initialRooms,
+    initialPageSize: 12,
+    searchFields: [(r) => r.nama_ruangan, (r) => r.gedung, (r) => r.deskripsi, (r) => r.kode_qr],
+  });
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -84,14 +104,27 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
         </button>
       </div>
 
+      {/* Search & Page Size Controls */}
+      <DataTableControls
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cari nama ruang, gedung, atau kode QR..."
+        pageSize={pageSize}
+        pageSizeOptions={[6, 12, 24, 48]}
+        onPageSizeChange={setPageSize}
+        totalItems={totalItems}
+      />
+
       {/* Grid Ruang Kelas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {initialRooms.length === 0 ? (
+        {paginatedRooms.length === 0 ? (
           <div className="col-span-full p-12 bg-white rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-            Belum ada ruang kelas terdaftar. Klik &quot;Tambah Ruangan&quot; untuk mendaftarkan ruangan.
+            {searchQuery
+              ? 'Tidak ditemukan ruang kelas yang cocok dengan pencarian.'
+              : 'Belum ada ruang kelas terdaftar. Klik "Tambah Ruangan" untuk mendaftarkan ruangan.'}
           </div>
         ) : (
-          initialRooms.map((room) => (
+          paginatedRooms.map((room) => (
             <div
               key={room.id}
               className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between hover:border-slate-300 transition space-y-4"
@@ -144,6 +177,20 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
           ))
         )}
       </div>
+
+      {/* Pagination Bar */}
+      {totalItems > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <DataTablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={totalItems}
+            startIndex={startIndex}
+            endIndex={endIndex}
+          />
+        </div>
+      )}
 
       {/* MODAL TAMBAH RUANG KELAS */}
       {showAddModal && (

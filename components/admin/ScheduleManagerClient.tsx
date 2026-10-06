@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Room, Subject, Profile, Schedule } from '@/types/database';
 import Link from 'next/link';
+import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 interface ScheduleManagerProps {
   initialSchedules: any[];
@@ -42,9 +43,37 @@ export default function ScheduleManagerClient({
     null
   );
 
-  const filteredSchedules = initialSchedules.filter((s) =>
-    selectedHari === 'Semua' ? true : s.hari === selectedHari
-  );
+  const dayFilteredSchedules = React.useMemo(() => {
+    return initialSchedules.filter((s) =>
+      selectedHari === 'Semua' ? true : s.hari === selectedHari
+    );
+  }, [initialSchedules, selectedHari]);
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedData,
+    filteredCount,
+    totalItems,
+    totalPages,
+    startIndex,
+    endIndex,
+  } = useDataTable<any>({
+    data: dayFilteredSchedules,
+    searchFields: [
+      (s) => s.profiles?.nama,
+      (s) => s.subjects?.nama_mapel,
+      (s) => s.subjects?.kode_mapel,
+      (s) => s.rooms?.nama_ruangan,
+      (s) => s.jam_ke,
+      (s) => s.hari,
+    ],
+    initialPageSize: 25,
+  });
 
   async function handleCreateSchedule(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -139,44 +168,63 @@ export default function ScheduleManagerClient({
         })}
       </div>
 
-      {/* Tabel Jadwal */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Kontrol Pencarian, Filter & Paginasi */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-4 space-y-3">
+        <DataTableControls
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Cari mapel, guru pengampu, ruang kelas, atau jam..."
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[15, 25, 50, 100]}
+        />
+
+        {/* Tabel Jadwal */}
+        <div className="overflow-x-auto rounded-lg border border-slate-200/80">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 uppercase tracking-wider font-semibold">
-                <th className="py-3 px-5">Hari & Jam</th>
-                <th className="py-3 px-5">Mata Pelajaran</th>
-                <th className="py-3 px-5">Ruang Kelas</th>
-                <th className="py-3 px-5">Guru Pengampu</th>
-                <th className="py-3 px-5 text-right">Aksi</th>
+              <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase tracking-wider font-semibold">
+                <th className="py-3 px-4">Hari & Jam</th>
+                <th className="py-3 px-4">Mata Pelajaran</th>
+                <th className="py-3 px-4">Ruang Kelas</th>
+                <th className="py-3 px-4">Guru Pengampu</th>
+                <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filteredSchedules.length === 0 ? (
+            <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+              {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
-                    Tidak ada jadwal pelajaran pada hari yang dipilih.
+                    {searchQuery
+                      ? `Tidak ditemukan jadwal yang cocok dengan kata kunci "${searchQuery}".`
+                      : 'Tidak ada jadwal pelajaran pada hari yang dipilih.'}
                   </td>
                 </tr>
               ) : (
-                filteredSchedules.map((sch) => {
+                paginatedData.map((sch) => {
                   const teacher = sch.profiles || {};
                   const room = sch.rooms || {};
                   const sub = sch.subjects || {};
 
                   return (
-                    <tr key={sch.id} className="hover:bg-slate-50/60 transition">
-                      <td className="py-3.5 px-5">
-                        <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium text-[11px] border border-slate-200/60 mr-2">
-                          {sch.hari}
-                        </span>
-                        <span className="font-mono text-slate-700 text-xs">
-                          {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)}
+                    <tr key={sch.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-semibold text-[11px] border border-slate-200/60">
+                            {sch.hari}
+                          </span>
+                          {sch.jam_ke && (
+                            <span className="px-1.5 py-0.5 bg-[#3a4a83]/10 text-[#3a4a83] font-bold rounded text-[10px] border border-[#3a4a83]/20">
+                              Jam {sch.jam_ke}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-mono text-slate-600 text-[11px] block mt-1">
+                          {sch.jam_mulai?.slice(0, 5)} - {sch.jam_selesai?.slice(0, 5)} WIB
                         </span>
                       </td>
 
-                      <td className="py-3.5 px-5">
+                      <td className="py-3.5 px-4">
                         <div className="font-semibold text-slate-900 flex items-center gap-2">
                           <BookOpen className="w-3.5 h-3.5 text-slate-400" />
                           <span>{sub.nama_mapel || 'Mapel'}</span>
@@ -188,7 +236,7 @@ export default function ScheduleManagerClient({
                         )}
                       </td>
 
-                      <td className="py-3.5 px-5">
+                      <td className="py-3.5 px-4">
                         <div className="font-medium text-slate-800 flex items-center gap-1.5">
                           <School className="w-3.5 h-3.5 text-slate-400" />
                           <span>{room.nama_ruangan || 'Ruangan'}</span>
@@ -200,14 +248,14 @@ export default function ScheduleManagerClient({
                         )}
                       </td>
 
-                      <td className="py-3.5 px-5">
+                      <td className="py-3.5 px-4">
                         <div className="font-semibold text-slate-900">{teacher.nama || 'Guru'}</div>
                         <div className="text-[10px] text-slate-400">
                           {teacher.nip ? `NIP. ${teacher.nip}` : teacher.jabatan || '-'}
                         </div>
                       </td>
 
-                      <td className="py-3.5 px-5 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => handleDeleteSchedule(sch.id)}
                           disabled={deleteId === sch.id}
@@ -224,6 +272,17 @@ export default function ScheduleManagerClient({
             </tbody>
           </table>
         </div>
+
+        {/* Komponen Paginasi */}
+        <DataTablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalFiltered={filteredCount}
+          totalAll={totalItems}
+        />
       </div>
 
       {/* MODAL TAMBAH JADWAL */}

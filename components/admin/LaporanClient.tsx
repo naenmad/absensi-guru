@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Download,
   Calendar,
@@ -10,35 +10,55 @@ import {
   FileSpreadsheet,
   Camera,
 } from 'lucide-react';
+import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 interface LaporanClientProps {
   initialAttendances: any[];
 }
 
 export default function LaporanClient({ initialAttendances }: LaporanClientProps) {
-  const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Filter attendances
-  const filteredData = initialAttendances.filter((att) => {
-    const teacherName = att.profiles?.nama?.toLowerCase() || '';
-    const nip = att.profiles?.nip?.toLowerCase() || '';
-    const dateStr = att.tanggal || '';
+  // Pre-filter by month
+  const monthFilteredData = useMemo(() => {
+    return initialAttendances.filter((att) => {
+      const dateStr = att.tanggal || '';
+      return dateStr.startsWith(filterMonth);
+    });
+  }, [initialAttendances, filterMonth]);
 
-    const matchesSearch =
-      teacherName.includes(searchTerm.toLowerCase()) || nip.includes(searchTerm.toLowerCase());
-    const matchesMonth = dateStr.startsWith(filterMonth);
-
-    return matchesSearch && matchesMonth;
+  const {
+    paginatedData,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
+    startIndex,
+    endIndex,
+    searchQuery,
+    setSearchQuery,
+    filteredData,
+  } = useDataTable<any>({
+    data: monthFilteredData,
+    initialPageSize: 25,
+    pageSizeOptions: [10, 25, 50, 100],
+    searchFilter: (att, q) => {
+      const teacherName = att.profiles?.nama?.toLowerCase() || '';
+      const nip = att.profiles?.nip?.toLowerCase() || '';
+      const jabatan = att.profiles?.jabatan?.toLowerCase() || '';
+      return teacherName.includes(q) || nip.includes(q) || jabatan.includes(q);
+    },
   });
 
-  // Export CSV
+  // Export CSV based on currently filtered records
   const handleExportCSV = () => {
     if (filteredData.length === 0) {
-      alert('Tidak ada data untuk diekspor.');
+      alert('Tidak ada data untuk diekspor pada filter ini.');
       return;
     }
 
@@ -94,32 +114,32 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
           className="py-2 px-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-2 shadow-xs transition cursor-pointer self-start sm:self-auto"
         >
           <Download className="w-4 h-4" />
-          <span>Ekspor CSV</span>
+          <span>Ekspor CSV ({filteredData.length} data)</span>
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-center gap-3">
-        <div className="relative flex-1 w-full">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Cari berdasarkan nama guru atau NIP..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
-          />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+      {/* Filter Bar with Month Selector and Search Controls */}
+      <div className="space-y-3">
+        <div className="bg-white rounded-xl p-3 border border-slate-200/80 shadow-xs flex items-center gap-3">
           <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="text-xs font-semibold text-slate-700">Pilih Bulan Rekap:</span>
           <input
             type="month"
             value={filterMonth}
             onChange={(e) => setFilterMonth(e.target.value)}
-            className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 w-full sm:w-auto font-mono"
+            className="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 font-mono"
           />
         </div>
+
+        <DataTableControls
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Cari nama guru, NIP, atau jabatan..."
+          pageSize={pageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+          onPageSizeChange={setPageSize}
+          totalItems={totalItems}
+        />
       </div>
 
       {/* Tabel Data Rekap */}
@@ -137,14 +157,16 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {filteredData.length === 0 ? (
+              {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-slate-400">
-                    Tidak ada data presensi pada periode yang dipilih.
+                    {searchQuery
+                      ? 'Tidak ditemukan data presensi yang sesuai pencarian.'
+                      : 'Tidak ada data presensi pada periode bulan yang dipilih.'}
                   </td>
                 </tr>
               ) : (
-                filteredData.map((row) => {
+                paginatedData.map((row) => {
                   const teacher = row.profiles || {};
                   const isTerlambat = row.status_masuk === 'TERLAMBAT';
 
@@ -225,6 +247,16 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Bar */}
+        <DataTablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={totalItems}
+          startIndex={startIndex}
+          endIndex={endIndex}
+        />
       </div>
     </div>
   );

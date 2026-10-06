@@ -15,6 +15,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { LeaveRequest } from '@/types/database';
+import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: any[] }) {
   const [activeTab, setActiveTab] = useState<'PENDING' | 'HISTORY'>('PENDING');
@@ -22,6 +23,33 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
 
   const pendingLeaves = initialLeaves.filter((l) => l.status === 'PENDING');
   const historyLeaves = initialLeaves.filter((l) => l.status !== 'PENDING');
+
+  const currentSource = activeTab === 'PENDING' ? pendingLeaves : historyLeaves;
+
+  const {
+    paginatedData: paginatedLeaves,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
+    startIndex,
+    endIndex,
+    searchQuery,
+    setSearchQuery,
+  } = useDataTable<any>({
+    data: currentSource,
+    initialPageSize: 10,
+    pageSizeOptions: [6, 10, 20, 50],
+    searchFilter: (leave, q) => {
+      const nama = leave.profiles?.nama?.toLowerCase() || '';
+      const nip = leave.profiles?.nip?.toLowerCase() || '';
+      const jenis = leave.jenis?.toLowerCase() || '';
+      const alasan = leave.alasan?.toLowerCase() || '';
+      return nama.includes(q) || nip.includes(q) || jenis.includes(q) || alasan.includes(q);
+    },
+  });
 
   async function handleReview(id: string, status: 'APPROVED' | 'REJECTED') {
     const promptMsg =
@@ -41,8 +69,6 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
     }
   }
 
-  const currentList = activeTab === 'PENDING' ? pendingLeaves : historyLeaves;
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -56,7 +82,10 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
         {/* Tab Switcher */}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg text-xs font-medium self-start sm:self-auto border border-slate-200/60">
           <button
-            onClick={() => setActiveTab('PENDING')}
+            onClick={() => {
+              setActiveTab('PENDING');
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'PENDING'
                 ? 'bg-white text-slate-900 shadow-xs font-semibold'
@@ -67,7 +96,10 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
             <span>Perlu Ditinjau ({pendingLeaves.length})</span>
           </button>
           <button
-            onClick={() => setActiveTab('HISTORY')}
+            onClick={() => {
+              setActiveTab('HISTORY');
+              setCurrentPage(1);
+            }}
             className={`px-3 py-1.5 rounded-md transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'HISTORY'
                 ? 'bg-white text-slate-900 shadow-xs font-semibold'
@@ -75,19 +107,32 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
-            <span>Riwayat Selesai</span>
+            <span>Riwayat Selesai ({historyLeaves.length})</span>
           </button>
         </div>
       </div>
 
+      {/* Search & Page Size Controls */}
+      <DataTableControls
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cari nama guru, NIP, jenis izin, alasan..."
+        pageSize={pageSize}
+        pageSizeOptions={[6, 10, 20, 50]}
+        onPageSizeChange={setPageSize}
+        totalItems={totalItems}
+      />
+
       {/* List Permohonan */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {currentList.length === 0 ? (
+        {paginatedLeaves.length === 0 ? (
           <div className="col-span-2 p-12 bg-white rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
-            Tidak ada permohonan izin pada kategori ini.
+            {searchQuery
+              ? 'Tidak ditemukan permohonan yang sesuai kriteria pencarian.'
+              : 'Tidak ada permohonan izin pada kategori ini.'}
           </div>
         ) : (
-          currentList.map((leave) => {
+          paginatedLeaves.map((leave) => {
             const profile = leave.profiles || {};
             const isPending = leave.status === 'PENDING';
 
@@ -183,6 +228,20 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
           })
         )}
       </div>
+
+      {/* Pagination Bar */}
+      {totalItems > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <DataTablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            totalItems={totalItems}
+            startIndex={startIndex}
+            endIndex={endIndex}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { createSubjectAction, deleteSubjectAction } from '@/actions/schedule';
 import { BookOpen, Plus, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Subject } from '@/types/database';
+import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 export default function SubjectManagerClient({ initialSubjects }: { initialSubjects: Subject[] }) {
   const [showModal, setShowAddModal] = useState(false);
@@ -12,6 +13,25 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
   const [feedback, setFeedback] = useState<{ success?: boolean; message?: string; error?: string } | null>(
     null
   );
+
+  const {
+    paginatedData: paginatedSubjects,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    totalPages,
+    totalItems,
+    filteredCount,
+    startIndex,
+    endIndex,
+    searchQuery,
+    setSearchQuery,
+  } = useDataTable<Subject>({
+    data: initialSubjects,
+    initialPageSize: 10,
+    searchFields: [(s) => s.nama_mapel, (s) => s.kode_mapel],
+  });
 
   async function handleCreate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -64,6 +84,15 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
         </button>
       </div>
 
+      {/* Search & Page Size Controls */}
+      <DataTableControls
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Cari mata pelajaran atau kode..."
+        pageSize={pageSize}
+        onPageSizeChange={setPageSize}
+      />
+
       {/* Tabel Mata Pelajaran */}
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
@@ -76,14 +105,16 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {initialSubjects.length === 0 ? (
+              {paginatedSubjects.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="py-12 text-center text-slate-400">
-                    Belum ada data mata pelajaran. Klik tombol &quot;Tambah Mata Pelajaran&quot; untuk menambahkan.
+                    {searchQuery
+                      ? 'Tidak ditemukan mata pelajaran yang cocok dengan pencarian.'
+                      : 'Belum ada data mata pelajaran. Klik tombol "Tambah Mata Pelajaran" untuk menambahkan.'}
                   </td>
                 </tr>
               ) : (
-                initialSubjects.map((sub) => (
+                paginatedSubjects.map((sub) => (
                   <tr key={sub.id} className="hover:bg-slate-50/60 transition">
                     <td className="py-3.5 px-5 font-semibold text-slate-900 flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 border border-slate-200/60">
@@ -110,6 +141,17 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Bar */}
+        <DataTablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalFiltered={filteredCount}
+          totalAll={totalItems}
+        />
       </div>
 
       {/* MODAL TAMBAH MAPEL */}

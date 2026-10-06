@@ -961,345 +961,557 @@ BEGIN
 END $$;
 
 -- 3. SEED 12 MATA PELAJARAN
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Pendidikan Agama Islam & Budi Pekerti', 'PAIBP-A')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Pendidikan Pancasila & Kewarganegaraan', 'PPKN-B')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Bahasa Indonesia', 'BIND-C')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Matematika', 'MTK-D')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Ilmu Pengetahuan Alam', 'IPA-E')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Ilmu Pengetahuan Sosial', 'IPS-F')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Bahasa Inggris', 'BING-G')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Seni Budaya & Keterampilan', 'SBK-H')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Pendidikan Jasmani, Olahraga, & Kesehatan', 'PJOK-I')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Teknologi Informasi & Komunikasi / Informatika', 'TIK-J')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Bahasa Sunda', 'BSUN-K')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
-INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('Bimbingan & Konseling', 'BK-L')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;
+DO $$
+DECLARE
+  sub RECORD;
+  target_sub_id UUID;
+BEGIN
+  FOR sub IN
+    SELECT * FROM (VALUES
+      ('Pendidikan Agama Islam & Budi Pekerti', 'PAIBP-A'),
+      ('Pendidikan Pancasila & Kewarganegaraan', 'PPKN-B'),
+      ('Bahasa Indonesia', 'BIND-C'),
+      ('Matematika', 'MTK-D'),
+      ('Ilmu Pengetahuan Alam', 'IPA-E'),
+      ('Ilmu Pengetahuan Sosial', 'IPS-F'),
+      ('Bahasa Inggris', 'BING-G'),
+      ('Seni Budaya & Keterampilan', 'SBK-H'),
+      ('Pendidikan Jasmani, Olahraga, & Kesehatan', 'PJOK-I'),
+      ('Teknologi Informasi & Komunikasi / Informatika', 'TIK-J'),
+      ('Bahasa Sunda', 'BSUN-K'),
+      ('Bimbingan & Konseling', 'BK-L')
+    ) AS t(nama, kode)
+  LOOP
+    -- Cari id mapel yang sudah ada berdasarkan kode atau nama
+    SELECT id INTO target_sub_id FROM public.subjects WHERE kode_mapel = sub.kode LIMIT 1;
+    IF target_sub_id IS NULL THEN
+      SELECT id INTO target_sub_id FROM public.subjects WHERE nama_mapel = sub.nama LIMIT 1;
+    END IF;
+    IF target_sub_id IS NOT NULL THEN
+      UPDATE public.subjects SET nama_mapel = sub.nama, kode_mapel = sub.kode WHERE id = target_sub_id;
+    ELSE
+      INSERT INTO public.subjects (nama_mapel, kode_mapel) VALUES (sub.nama, sub.kode);
+    END IF;
+  END LOOP;
+END $$;
 
 -- 4. SEED 23 RUANG KELAS / ROMBEL & PENETAPAN WALI KELAS
+DO $$
+DECLARE
+  rm RECORD;
+  target_rm_id UUID;
+  wali_id UUID;
+BEGIN
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7A',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7A TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7A',
-  (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7A
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 3 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7B',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7B TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7B',
-  (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7A',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7A TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7A',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7A', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7A TP 2026/2027', 'VII', 'QR-RUANG-KLS7A', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7C',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7C TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7C',
-  (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7D',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7D TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7D',
-  (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7B
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 14 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7E',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7E TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7E',
-  (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7B',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7B TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7B',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7B', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7B TP 2026/2027', 'VII', 'QR-RUANG-KLS7B', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7F',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7F TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7F',
-  (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 7G',
-  'Gedung Kelas VII',
-  'Ruang Belajar Ruang Kelas 7G TP 2026/2027',
-  'VII',
-  'QR-RUANG-KLS7G',
-  (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7C
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 24 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 8A',
-  'Gedung Kelas VIII',
-  'Ruang Belajar Ruang Kelas 8A TP 2026/2027',
-  'VIII',
-  'QR-RUANG-KLS8A',
-  (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7C',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7C TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7C',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7C', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7C TP 2026/2027', 'VII', 'QR-RUANG-KLS7C', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 8B',
-  'Gedung Kelas VIII',
-  'Ruang Belajar Ruang Kelas 8B TP 2026/2027',
-  'VIII',
-  'QR-RUANG-KLS8B',
-  (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 8C',
-  'Gedung Kelas VIII',
-  'Ruang Belajar Ruang Kelas 8C TP 2026/2027',
-  'VIII',
-  'QR-RUANG-KLS8C',
-  (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7D
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 16 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 8D',
-  'Gedung Kelas VIII',
-  'Ruang Belajar Ruang Kelas 8D TP 2026/2027',
-  'VIII',
-  'QR-RUANG-KLS8D',
-  (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7D',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7D TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7D',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7D', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7D TP 2026/2027', 'VII', 'QR-RUANG-KLS7D', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 8E',
-  'Gedung Kelas VIII',
-  'Ruang Belajar Ruang Kelas 8E TP 2026/2027',
-  'VIII',
-  'QR-RUANG-KLS8E',
-  (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 8F',
-  'Gedung Kelas VIII',
-  'Ruang Belajar Ruang Kelas 8F TP 2026/2027',
-  'VIII',
-  'QR-RUANG-KLS8F',
-  (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7E
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 6 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9A',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9A TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9A',
-  (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7E',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7E TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7E',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7E', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7E TP 2026/2027', 'VII', 'QR-RUANG-KLS7E', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9B',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9B TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9B',
-  (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9C',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9C TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9C',
-  (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7F
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 25 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9D',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9D TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9D',
-  (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7F',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7F TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7F',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7F', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7F TP 2026/2027', 'VII', 'QR-RUANG-KLS7F', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9E',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9E TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9E',
-  (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9F',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9F TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9F',
-  (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 7G
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 8 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9G',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9G TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9G',
-  (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 7G',
+      gedung = 'Gedung Kelas VII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 7G TP 2026/2027',
+      tingkat = 'VII',
+      kode_qr = 'QR-RUANG-KLS7G',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 7G', 'Gedung Kelas VII', 'Ruang Belajar Ruang Kelas 7G TP 2026/2027', 'VII', 'QR-RUANG-KLS7G', wali_id);
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9H',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9H TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9H',
-  (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9I',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9I TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9I',
-  (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  -- Ruang: Ruang Kelas 8A
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 23 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1;
+  END IF;
 
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  'Ruang Kelas 9J',
-  'Gedung Kelas IX',
-  'Ruang Belajar Ruang Kelas 9J TP 2026/2027',
-  'IX',
-  'QR-RUANG-KLS9J',
-  (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 8A',
+      gedung = 'Gedung Kelas VIII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 8A TP 2026/2027',
+      tingkat = 'VIII',
+      kode_qr = 'QR-RUANG-KLS8A',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 8A', 'Gedung Kelas VIII', 'Ruang Belajar Ruang Kelas 8A TP 2026/2027', 'VIII', 'QR-RUANG-KLS8A', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 8B
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 18 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 8B',
+      gedung = 'Gedung Kelas VIII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 8B TP 2026/2027',
+      tingkat = 'VIII',
+      kode_qr = 'QR-RUANG-KLS8B',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 8B', 'Gedung Kelas VIII', 'Ruang Belajar Ruang Kelas 8B TP 2026/2027', 'VIII', 'QR-RUANG-KLS8B', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 8C
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 9 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 8C',
+      gedung = 'Gedung Kelas VIII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 8C TP 2026/2027',
+      tingkat = 'VIII',
+      kode_qr = 'QR-RUANG-KLS8C',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 8C', 'Gedung Kelas VIII', 'Ruang Belajar Ruang Kelas 8C TP 2026/2027', 'VIII', 'QR-RUANG-KLS8C', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 8D
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 22 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 8D',
+      gedung = 'Gedung Kelas VIII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 8D TP 2026/2027',
+      tingkat = 'VIII',
+      kode_qr = 'QR-RUANG-KLS8D',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 8D', 'Gedung Kelas VIII', 'Ruang Belajar Ruang Kelas 8D TP 2026/2027', 'VIII', 'QR-RUANG-KLS8D', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 8E
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 17 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 8E',
+      gedung = 'Gedung Kelas VIII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 8E TP 2026/2027',
+      tingkat = 'VIII',
+      kode_qr = 'QR-RUANG-KLS8E',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 8E', 'Gedung Kelas VIII', 'Ruang Belajar Ruang Kelas 8E TP 2026/2027', 'VIII', 'QR-RUANG-KLS8E', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 8F
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 19 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 8F',
+      gedung = 'Gedung Kelas VIII',
+      deskripsi = 'Ruang Belajar Ruang Kelas 8F TP 2026/2027',
+      tingkat = 'VIII',
+      kode_qr = 'QR-RUANG-KLS8F',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 8F', 'Gedung Kelas VIII', 'Ruang Belajar Ruang Kelas 8F TP 2026/2027', 'VIII', 'QR-RUANG-KLS8F', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9A
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 4 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9A',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9A TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9A',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9A', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9A TP 2026/2027', 'IX', 'QR-RUANG-KLS9A', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9B
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 1 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9B',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9B TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9B',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9B', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9B TP 2026/2027', 'IX', 'QR-RUANG-KLS9B', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9C
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 5 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9C',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9C TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9C',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9C', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9C TP 2026/2027', 'IX', 'QR-RUANG-KLS9C', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9D
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 21 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9D',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9D TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9D',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9D', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9D TP 2026/2027', 'IX', 'QR-RUANG-KLS9D', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9E
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 7 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9E',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9E TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9E',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9E', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9E TP 2026/2027', 'IX', 'QR-RUANG-KLS9E', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9F
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 13 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9F',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9F TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9F',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9F', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9F TP 2026/2027', 'IX', 'QR-RUANG-KLS9F', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9G
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 11 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9G',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9G TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9G',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9G', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9G TP 2026/2027', 'IX', 'QR-RUANG-KLS9G', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9H
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 10 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9H',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9H TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9H',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9H', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9H TP 2026/2027', 'IX', 'QR-RUANG-KLS9H', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9I
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 20 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9I',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9I TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9I',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9I', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9I TP 2026/2027', 'IX', 'QR-RUANG-KLS9I', wali_id);
+  END IF;
+
+
+  -- Ruang: Ruang Kelas 9J
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = 12 LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = 'Ruang Kelas 9J',
+      gedung = 'Gedung Kelas IX',
+      deskripsi = 'Ruang Belajar Ruang Kelas 9J TP 2026/2027',
+      tingkat = 'IX',
+      kode_qr = 'QR-RUANG-KLS9J',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('Ruang Kelas 9J', 'Gedung Kelas IX', 'Ruang Belajar Ruang Kelas 9J TP 2026/2027', 'IX', 'QR-RUANG-KLS9J', wali_id);
+  END IF;
+
+END $$;
 
 -- 5. SEED JADWAL PIKET GURU
+DELETE FROM public.picket_schedules;
 
 INSERT INTO public.picket_schedules (hari, teacher_id, nama_petugas, catatan)
 VALUES (
@@ -1307,10 +1519,7 @@ VALUES (
   (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
   'Ahmad Husen Multiana, S.Pd.',
   'Petugas Piket Hari Senin'
-)
-ON CONFLICT (hari, teacher_id) DO UPDATE SET
-  nama_petugas = EXCLUDED.nama_petugas,
-  catatan = EXCLUDED.catatan;
+);
 
 INSERT INTO public.picket_schedules (hari, teacher_id, nama_petugas, catatan)
 VALUES (
@@ -1318,10 +1527,7 @@ VALUES (
   (SELECT id FROM public.profiles WHERE kode_guru = 101 LIMIT 1),
   'Ana',
   'Petugas Piket Hari Selasa'
-)
-ON CONFLICT (hari, teacher_id) DO UPDATE SET
-  nama_petugas = EXCLUDED.nama_petugas,
-  catatan = EXCLUDED.catatan;
+);
 
 INSERT INTO public.picket_schedules (hari, teacher_id, nama_petugas, catatan)
 VALUES (
@@ -1329,10 +1535,7 @@ VALUES (
   (SELECT id FROM public.profiles WHERE kode_guru = 102 LIMIT 1),
   'Imi Suminar',
   'Petugas Piket Hari Rabu'
-)
-ON CONFLICT (hari, teacher_id) DO UPDATE SET
-  nama_petugas = EXCLUDED.nama_petugas,
-  catatan = EXCLUDED.catatan;
+);
 
 INSERT INTO public.picket_schedules (hari, teacher_id, nama_petugas, catatan)
 VALUES (
@@ -1340,10 +1543,7 @@ VALUES (
   (SELECT id FROM public.profiles WHERE kode_guru = 103 LIMIT 1),
   'Hanni Apnianti',
   'Petugas Piket Hari Kamis'
-)
-ON CONFLICT (hari, teacher_id) DO UPDATE SET
-  nama_petugas = EXCLUDED.nama_petugas,
-  catatan = EXCLUDED.catatan;
+);
 
 INSERT INTO public.picket_schedules (hari, teacher_id, nama_petugas, catatan)
 VALUES (
@@ -1351,10 +1551,7 @@ VALUES (
   (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
   'Damanhuri, S.Pd.I., M.Pd.',
   'Petugas Piket Hari Jumat'
-)
-ON CONFLICT (hari, teacher_id) DO UPDATE SET
-  nama_petugas = EXCLUDED.nama_petugas,
-  catatan = EXCLUDED.catatan;
+);
 
 -- 6. SEED SELURUH JADWAL PELAJARAN KBM (391 Sesi)
 -- Membersihkan jadwal lama untuk sinkronisasi bersih:
@@ -1364,8 +1561,8 @@ INSERT INTO public.schedules (teacher_id, subject_id, room_id, hari, jam_mulai, 
 VALUES
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1373,8 +1570,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1382,8 +1579,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1391,8 +1588,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1400,8 +1597,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Senin',
     '08:50:00',
     '10:30:00',
@@ -1409,8 +1606,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Senin',
     '10:30:00',
     '11:50:00',
@@ -1418,8 +1615,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1427,8 +1624,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1436,8 +1633,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:10:00',
@@ -1445,8 +1642,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1454,8 +1651,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1463,8 +1660,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1472,8 +1669,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1481,8 +1678,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1490,8 +1687,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:50:00',
@@ -1499,8 +1696,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1508,8 +1705,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1517,8 +1714,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1526,8 +1723,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1535,8 +1732,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1544,8 +1741,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Senin',
     '08:50:00',
     '10:30:00',
@@ -1553,8 +1750,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Senin',
     '10:30:00',
     '11:50:00',
@@ -1562,8 +1759,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1571,8 +1768,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1580,8 +1777,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:10:00',
@@ -1589,8 +1786,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1598,8 +1795,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1607,8 +1804,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:50:00',
@@ -1616,8 +1813,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1625,8 +1822,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1634,8 +1831,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:10:00',
@@ -1643,8 +1840,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1652,8 +1849,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1661,8 +1858,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:50:00',
@@ -1670,8 +1867,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1679,8 +1876,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1688,8 +1885,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1697,8 +1894,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1706,8 +1903,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1715,8 +1912,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Senin',
     '08:50:00',
     '10:30:00',
@@ -1724,8 +1921,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Senin',
     '10:30:00',
     '11:50:00',
@@ -1733,8 +1930,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1742,8 +1939,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1751,8 +1948,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1760,8 +1957,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1769,8 +1966,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1778,8 +1975,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:50:00',
@@ -1787,8 +1984,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1796,8 +1993,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1805,8 +2002,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1814,8 +2011,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1823,8 +2020,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1832,8 +2029,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:50:00',
@@ -1841,8 +2038,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1850,8 +2047,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1859,8 +2056,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Senin',
     '08:50:00',
     '10:30:00',
@@ -1868,8 +2065,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Senin',
     '10:30:00',
     '11:50:00',
@@ -1877,8 +2074,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1886,8 +2083,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1895,8 +2092,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Senin',
     '08:50:00',
     '10:30:00',
@@ -1904,8 +2101,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Senin',
     '10:30:00',
     '11:50:00',
@@ -1913,8 +2110,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -1922,8 +2119,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -1931,8 +2128,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Senin',
     '08:50:00',
     '11:10:00',
@@ -1940,8 +2137,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1949,8 +2146,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1958,8 +2155,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:10:00',
@@ -1967,8 +2164,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -1976,8 +2173,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Senin',
     '07:30:00',
     '09:30:00',
@@ -1985,8 +2182,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Senin',
     '09:50:00',
     '11:10:00',
@@ -1994,8 +2191,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Senin',
     '11:10:00',
     '13:50:00',
@@ -2003,8 +2200,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Senin',
     '07:30:00',
     '08:50:00',
@@ -2012,8 +2209,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Senin',
     '08:50:00',
     '10:30:00',
@@ -2021,8 +2218,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Senin',
     '10:30:00',
     '11:50:00',
@@ -2030,8 +2227,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Senin',
     '12:30:00',
     '13:50:00',
@@ -2039,8 +2236,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2048,8 +2245,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '10:30:00',
@@ -2057,8 +2254,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Selasa',
     '10:30:00',
     '11:50:00',
@@ -2066,8 +2263,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2075,8 +2272,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2084,8 +2281,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:10:00',
@@ -2093,8 +2290,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2102,8 +2299,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2111,8 +2308,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '10:30:00',
@@ -2120,8 +2317,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Selasa',
     '10:30:00',
     '11:50:00',
@@ -2129,8 +2326,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2138,8 +2335,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2147,8 +2344,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:10:00',
@@ -2156,8 +2353,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2165,8 +2362,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2174,8 +2371,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '11:10:00',
@@ -2183,8 +2380,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2192,8 +2389,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2201,8 +2398,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:10:00',
@@ -2210,8 +2407,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2219,8 +2416,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2228,8 +2425,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2237,8 +2434,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2246,8 +2443,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2255,8 +2452,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '10:30:00',
@@ -2264,8 +2461,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Selasa',
     '10:30:00',
     '11:50:00',
@@ -2273,8 +2470,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2282,8 +2479,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2291,8 +2488,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:10:00',
@@ -2300,8 +2497,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2309,8 +2506,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2318,8 +2515,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2327,8 +2524,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2336,8 +2533,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2345,8 +2542,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:10:00',
@@ -2354,8 +2551,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2363,8 +2560,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2372,8 +2569,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2381,8 +2578,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2390,8 +2587,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2399,8 +2596,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2408,8 +2605,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2417,8 +2614,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2426,8 +2623,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '11:10:00',
@@ -2435,8 +2632,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2444,8 +2641,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2453,8 +2650,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '10:30:00',
@@ -2462,8 +2659,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Selasa',
     '10:30:00',
     '11:50:00',
@@ -2471,8 +2668,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2480,8 +2677,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2489,8 +2686,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2498,8 +2695,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2507,8 +2704,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2516,8 +2713,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '10:30:00',
@@ -2525,8 +2722,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Selasa',
     '10:30:00',
     '11:50:00',
@@ -2534,8 +2731,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2543,8 +2740,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2552,8 +2749,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2561,8 +2758,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2570,8 +2767,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2579,8 +2776,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '11:10:00',
@@ -2588,8 +2785,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2597,8 +2794,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2606,8 +2803,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2615,8 +2812,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2624,8 +2821,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2633,8 +2830,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '10:30:00',
@@ -2642,8 +2839,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Selasa',
     '10:30:00',
     '11:50:00',
@@ -2651,8 +2848,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2660,8 +2857,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '09:30:00',
@@ -2669,8 +2866,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Selasa',
     '09:50:00',
     '11:50:00',
@@ -2678,8 +2875,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Selasa',
     '12:30:00',
     '13:50:00',
@@ -2687,8 +2884,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Selasa',
     '07:30:00',
     '08:50:00',
@@ -2696,8 +2893,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Selasa',
     '08:50:00',
     '11:10:00',
@@ -2705,8 +2902,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Selasa',
     '11:10:00',
     '13:50:00',
@@ -2714,8 +2911,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2723,8 +2920,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -2732,8 +2929,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -2741,8 +2938,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2750,8 +2947,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '10:40:00',
@@ -2759,8 +2956,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Rabu',
     '10:40:00',
     '12:00:00',
@@ -2768,8 +2965,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Rabu',
     '12:40:00',
     '14:00:00',
@@ -2777,8 +2974,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2786,8 +2983,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -2795,8 +2992,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -2804,8 +3001,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2813,8 +3010,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -2822,8 +3019,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -2831,8 +3028,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2840,8 +3037,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '10:40:00',
@@ -2849,8 +3046,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Rabu',
     '10:40:00',
     '12:00:00',
@@ -2858,8 +3055,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Rabu',
     '12:40:00',
     '14:00:00',
@@ -2867,8 +3064,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -2876,8 +3073,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '09:40:00',
@@ -2885,8 +3082,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Rabu',
     '10:00:00',
     '11:20:00',
@@ -2894,8 +3091,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -2903,8 +3100,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2912,8 +3109,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -2921,8 +3118,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -2930,8 +3127,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -2939,8 +3136,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -2948,8 +3145,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -2957,8 +3154,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -2966,8 +3163,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '10:40:00',
@@ -2975,8 +3172,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Rabu',
     '10:40:00',
     '12:00:00',
@@ -2984,8 +3181,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Rabu',
     '12:40:00',
     '14:00:00',
@@ -2993,8 +3190,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3002,8 +3199,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '10:40:00',
@@ -3011,8 +3208,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Rabu',
     '10:40:00',
     '12:00:00',
@@ -3020,8 +3217,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Rabu',
     '12:40:00',
     '14:00:00',
@@ -3029,8 +3226,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -3038,8 +3235,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '09:40:00',
@@ -3047,8 +3244,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Rabu',
     '10:00:00',
     '11:20:00',
@@ -3056,8 +3253,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3065,8 +3262,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3074,8 +3271,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '10:40:00',
@@ -3083,8 +3280,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Rabu',
     '10:40:00',
     '12:00:00',
@@ -3092,8 +3289,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Rabu',
     '12:40:00',
     '14:00:00',
@@ -3101,8 +3298,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3110,8 +3307,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -3119,8 +3316,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3128,8 +3325,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -3137,8 +3334,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '09:40:00',
@@ -3146,8 +3343,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Rabu',
     '10:00:00',
     '11:20:00',
@@ -3155,8 +3352,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3164,8 +3361,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3173,8 +3370,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -3182,8 +3379,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3191,8 +3388,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3200,8 +3397,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -3209,8 +3406,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3218,8 +3415,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3227,8 +3424,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -3236,8 +3433,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3245,8 +3442,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3254,8 +3451,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '10:40:00',
@@ -3263,8 +3460,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Rabu',
     '10:40:00',
     '12:00:00',
@@ -3272,8 +3469,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Rabu',
     '12:40:00',
     '14:00:00',
@@ -3281,8 +3478,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -3290,8 +3487,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '09:40:00',
@@ -3299,8 +3496,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Rabu',
     '10:00:00',
     '11:20:00',
@@ -3308,8 +3505,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3317,8 +3514,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3326,8 +3523,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -3335,8 +3532,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3344,8 +3541,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -3353,8 +3550,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '09:40:00',
@@ -3362,8 +3559,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Rabu',
     '10:00:00',
     '11:20:00',
@@ -3371,8 +3568,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3380,8 +3577,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '08:20:00',
@@ -3389,8 +3586,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Rabu',
     '08:20:00',
     '09:40:00',
@@ -3398,8 +3595,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Rabu',
     '10:00:00',
     '11:20:00',
@@ -3407,8 +3604,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3416,8 +3613,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Rabu',
     '07:00:00',
     '09:00:00',
@@ -3425,8 +3622,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Rabu',
     '09:00:00',
     '11:20:00',
@@ -3434,8 +3631,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Rabu',
     '11:20:00',
     '14:00:00',
@@ -3443,8 +3640,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3452,8 +3649,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '09:40:00',
@@ -3461,8 +3658,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Kamis',
     '10:00:00',
     '11:20:00',
@@ -3470,8 +3667,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3479,8 +3676,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3488,8 +3685,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -3497,8 +3694,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3506,8 +3703,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3515,8 +3712,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '10:40:00',
@@ -3524,8 +3721,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3533,8 +3730,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3542,8 +3739,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3551,8 +3748,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '10:40:00',
@@ -3560,8 +3757,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3569,8 +3766,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3578,8 +3775,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3587,8 +3784,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '09:40:00',
@@ -3596,8 +3793,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Kamis',
     '10:00:00',
     '11:20:00',
@@ -3605,8 +3802,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3614,8 +3811,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3623,8 +3820,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -3632,8 +3829,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3641,8 +3838,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3650,8 +3847,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -3659,8 +3856,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3668,8 +3865,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3677,8 +3874,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '10:40:00',
@@ -3686,8 +3883,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3695,8 +3892,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3704,8 +3901,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3713,8 +3910,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '10:40:00',
@@ -3722,8 +3919,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3731,8 +3928,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3740,8 +3937,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3749,8 +3946,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -3758,8 +3955,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3767,8 +3964,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3776,8 +3973,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '09:40:00',
@@ -3785,8 +3982,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Kamis',
     '10:00:00',
     '12:00:00',
@@ -3794,8 +3991,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3803,8 +4000,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3812,8 +4009,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '10:40:00',
@@ -3821,8 +4018,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3830,8 +4027,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3839,8 +4036,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3848,8 +4045,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -3857,8 +4054,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3866,8 +4063,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3875,8 +4072,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '09:40:00',
@@ -3884,8 +4081,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Kamis',
     '10:00:00',
     '11:20:00',
@@ -3893,8 +4090,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -3902,8 +4099,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -3911,8 +4108,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '10:40:00',
@@ -3920,8 +4117,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3929,8 +4126,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3938,8 +4135,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3947,8 +4144,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '10:40:00',
@@ -3956,8 +4153,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Kamis',
     '10:40:00',
     '12:00:00',
@@ -3965,8 +4162,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -3974,8 +4171,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -3983,8 +4180,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -3992,8 +4189,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -4001,8 +4198,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -4010,8 +4207,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -4019,8 +4216,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -4028,8 +4225,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -4037,8 +4234,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -4046,8 +4243,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -4055,8 +4252,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -4064,8 +4261,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '09:40:00',
@@ -4073,8 +4270,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Kamis',
     '10:00:00',
     '11:20:00',
@@ -4082,8 +4279,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -4091,8 +4288,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -4100,8 +4297,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -4109,8 +4306,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -4118,8 +4315,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '09:00:00',
@@ -4127,8 +4324,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Kamis',
     '09:00:00',
     '11:20:00',
@@ -4136,8 +4333,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Kamis',
     '11:20:00',
     '14:00:00',
@@ -4145,8 +4342,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Kamis',
     '07:00:00',
     '08:20:00',
@@ -4154,8 +4351,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Kamis',
     '08:20:00',
     '09:40:00',
@@ -4163,8 +4360,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Kamis',
     '10:00:00',
     '12:00:00',
@@ -4172,8 +4369,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Kamis',
     '12:40:00',
     '14:00:00',
@@ -4181,8 +4378,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4190,8 +4387,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4199,8 +4396,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4208,8 +4405,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4217,8 +4414,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4226,8 +4423,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 28 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4235,8 +4432,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4244,8 +4441,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4253,8 +4450,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4262,8 +4459,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 25 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4271,8 +4468,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 6 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4280,8 +4477,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 22 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4289,8 +4486,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4298,8 +4495,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 26 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4307,8 +4504,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 14 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4316,8 +4513,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 16 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4325,8 +4522,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 24 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4334,8 +4531,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4343,8 +4540,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4352,8 +4549,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4361,8 +4558,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4370,8 +4567,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4379,8 +4576,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4388,8 +4585,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4397,8 +4594,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 9 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4406,8 +4603,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 23 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4415,8 +4612,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 17 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4424,8 +4621,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 18 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4433,8 +4630,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4442,8 +4639,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 27 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4451,8 +4648,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 19 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4460,8 +4657,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4469,8 +4666,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 8 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PPKN-B' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Pancasila & Kewarganegaraan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4478,8 +4675,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 29 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4487,8 +4684,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 21 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4496,8 +4693,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4505,8 +4702,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4514,8 +4711,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4523,8 +4720,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4532,8 +4729,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 4 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4541,8 +4738,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 7 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BSUN-K' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Sunda' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4550,8 +4747,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 3 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PJOK-I' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Jasmani, Olahraga, & Kesehatan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4559,8 +4756,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 13 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'PAIBP-A' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Pendidikan Agama Islam & Budi Pekerti' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4568,8 +4765,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4577,8 +4774,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4586,8 +4783,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 15 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'TIK-J' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Teknologi Informasi & Komunikasi / Informatika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4595,8 +4792,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 5 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4604,8 +4801,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 1 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4613,8 +4810,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 20 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BIND-C' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Indonesia' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4622,8 +4819,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 2 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'MTK-D' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Matematika' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4631,8 +4828,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 10 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BING-G' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bahasa Inggris' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '08:30:00',
@@ -4640,8 +4837,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 30 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPS-F' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Sosial' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Jumat',
     '08:30:00',
     '09:30:00',
@@ -4649,8 +4846,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Jumat',
     '10:00:00',
     '11:00:00',
@@ -4658,8 +4855,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 11 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'IPA-E' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Ilmu Pengetahuan Alam' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Jumat',
     '07:30:00',
     '09:00:00',
@@ -4667,8 +4864,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 12 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'SBK-H' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Seni Budaya & Keterampilan' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Jumat',
     '09:00:00',
     '11:00:00',
@@ -4676,8 +4873,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7A' LIMIT 1)),
     'Senin',
     '13:50:00',
     '14:30:00',
@@ -4685,8 +4882,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7B' LIMIT 1)),
     'Senin',
     '13:50:00',
     '14:30:00',
@@ -4694,8 +4891,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7C' LIMIT 1)),
     'Senin',
     '13:50:00',
     '14:30:00',
@@ -4703,8 +4900,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7D' LIMIT 1)),
     'Senin',
     '13:50:00',
     '14:30:00',
@@ -4712,8 +4909,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7E' LIMIT 1)),
     'Selasa',
     '13:50:00',
     '14:30:00',
@@ -4721,8 +4918,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7F' LIMIT 1)),
     'Selasa',
     '13:50:00',
     '14:30:00',
@@ -4730,8 +4927,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 7G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS7G' LIMIT 1)),
     'Selasa',
     '13:50:00',
     '14:30:00',
@@ -4739,8 +4936,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8A' LIMIT 1)),
     'Selasa',
     '13:50:00',
     '14:30:00',
@@ -4748,8 +4945,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8B' LIMIT 1)),
     'Selasa',
     '13:50:00',
     '14:30:00',
@@ -4757,8 +4954,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8C' LIMIT 1)),
     'Rabu',
     '14:00:00',
     '14:40:00',
@@ -4766,8 +4963,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8D' LIMIT 1)),
     'Rabu',
     '14:00:00',
     '14:40:00',
@@ -4775,8 +4972,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8E' LIMIT 1)),
     'Rabu',
     '14:00:00',
     '14:40:00',
@@ -4784,8 +4981,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 8F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS8F' LIMIT 1)),
     'Rabu',
     '14:00:00',
     '14:40:00',
@@ -4793,8 +4990,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9A' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9A' LIMIT 1)),
     'Rabu',
     '14:00:00',
     '14:40:00',
@@ -4802,8 +4999,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9B' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9B' LIMIT 1)),
     'Kamis',
     '14:00:00',
     '14:40:00',
@@ -4811,8 +5008,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9C' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9C' LIMIT 1)),
     'Kamis',
     '14:00:00',
     '14:40:00',
@@ -4820,8 +5017,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9D' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9D' LIMIT 1)),
     'Kamis',
     '14:00:00',
     '14:40:00',
@@ -4829,8 +5026,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9E' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9E' LIMIT 1)),
     'Kamis',
     '14:00:00',
     '14:40:00',
@@ -4838,8 +5035,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9F' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9F' LIMIT 1)),
     'Kamis',
     '14:00:00',
     '14:40:00',
@@ -4847,8 +5044,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9G' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9G' LIMIT 1)),
     'Jumat',
     '11:00:00',
     '11:40:00',
@@ -4856,8 +5053,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9H' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9H' LIMIT 1)),
     'Jumat',
     '11:00:00',
     '11:40:00',
@@ -4865,8 +5062,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9I' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9I' LIMIT 1)),
     'Jumat',
     '11:00:00',
     '11:40:00',
@@ -4874,8 +5071,8 @@ VALUES
   ),
   (
     (SELECT id FROM public.profiles WHERE kode_guru = 31 LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = 'BK-L' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = 'Bimbingan & Konseling' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas 9J' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS9J' LIMIT 1)),
     'Jumat',
     '11:00:00',
     '11:40:00',

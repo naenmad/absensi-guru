@@ -15,7 +15,9 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Users,
 } from 'lucide-react';
+import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 interface Teacher {
   id: string;
@@ -34,6 +36,32 @@ export default function TeacherManagerClient({ initialTeachers }: { initialTeach
   const [feedback, setFeedback] = useState<{ success?: boolean; message?: string; error?: string } | null>(
     null
   );
+
+  // Hook pagination & search cerdas
+  const {
+    searchQuery,
+    setSearchQuery,
+    currentPage,
+    setCurrentPage,
+    pageSize,
+    setPageSize,
+    paginatedData,
+    filteredCount,
+    totalItems,
+    totalPages,
+    startIndex,
+    endIndex,
+  } = useDataTable<Teacher>({
+    data: initialTeachers,
+    searchFields: [
+      (t) => t.nama,
+      (t) => t.nip,
+      (t) => t.email,
+      (t) => t.jabatan,
+      (t) => t.no_hp,
+    ],
+    initialPageSize: 10,
+  });
 
   async function handleCreateTeacher(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -92,43 +120,55 @@ export default function TeacherManagerClient({ initialTeachers }: { initialTeach
         </button>
       </div>
 
-      {/* Tabel Data Guru */}
-      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-        <div className="overflow-x-auto">
+      {/* Kontrol Pencarian & Baris */}
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-4 space-y-3">
+        <DataTableControls
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Cari nama guru, NIP, email, jabatan..."
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          pageSizeOptions={[10, 25, 50, 100]}
+        />
+
+        {/* Tabel Data Guru */}
+        <div className="overflow-x-auto rounded-lg border border-slate-200/80">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-600 uppercase tracking-wider font-semibold">
-                <th className="py-3 px-5">Nama & NIP</th>
-                <th className="py-3 px-5">Email</th>
-                <th className="py-3 px-5">Jabatan</th>
-                <th className="py-3 px-5">No. Telepon</th>
-                <th className="py-3 px-5 text-right">Aksi</th>
+              <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-600 uppercase tracking-wider font-semibold">
+                <th className="py-3 px-4">Nama & NIP</th>
+                <th className="py-3 px-4">Email</th>
+                <th className="py-3 px-4">Jabatan</th>
+                <th className="py-3 px-4">No. Telepon</th>
+                <th className="py-3 px-4 text-right">Aksi</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 text-slate-700">
-              {initialTeachers.length === 0 ? (
+            <tbody className="divide-y divide-slate-100 text-slate-700 bg-white">
+              {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-12 text-center text-slate-400">
-                    Belum ada data guru terdaftar.
+                    {searchQuery
+                      ? `Tidak ditemukan guru yang cocok dengan kata kunci "${searchQuery}".`
+                      : 'Belum ada data guru terdaftar.'}
                   </td>
                 </tr>
               ) : (
-                initialTeachers.map((teacher) => (
-                  <tr key={teacher.id} className="hover:bg-slate-50/60 transition">
-                    <td className="py-3.5 px-5">
+                paginatedData.map((teacher) => (
+                  <tr key={teacher.id} className="hover:bg-slate-50/70 transition">
+                    <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-900">{teacher.nama}</div>
                       <div className="text-[11px] text-slate-400">
                         {teacher.nip ? `NIP. ${teacher.nip}` : 'NIP Belum Diisi'}
                       </div>
                     </td>
-                    <td className="py-3.5 px-5 text-slate-600 font-mono text-[11px]">{teacher.email}</td>
-                    <td className="py-3.5 px-5">
+                    <td className="py-3.5 px-4 text-slate-600 font-mono text-[11px]">{teacher.email}</td>
+                    <td className="py-3.5 px-4">
                       <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md font-medium border border-slate-200/60">
                         {teacher.jabatan || 'Guru'}
                       </span>
                     </td>
-                    <td className="py-3.5 px-5 text-slate-500">{teacher.no_hp || '-'}</td>
-                    <td className="py-3.5 px-5 text-right">
+                    <td className="py-3.5 px-4 text-slate-500">{teacher.no_hp || '-'}</td>
+                    <td className="py-3.5 px-4 text-right">
                       <button
                         onClick={() => handleDeleteTeacher(teacher.id, teacher.nama)}
                         disabled={deleteLoadingId === teacher.id}
@@ -148,6 +188,17 @@ export default function TeacherManagerClient({ initialTeachers }: { initialTeach
             </tbody>
           </table>
         </div>
+
+        {/* Komponen Paginasi */}
+        <DataTablePagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          totalFiltered={filteredCount}
+          totalAll={totalItems}
+        />
       </div>
 
       {/* Modal Tambah Guru Baru */}

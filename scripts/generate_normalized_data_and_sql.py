@@ -577,37 +577,76 @@ END $$;
 
     sql_lines.append("END $$;\n")
 
-    # 3. SEED MATA PELAJARAN
+    # 3. SEED MATA PELAJARAN (Tahan terhadap constraint nama_mapel maupun kode_mapel)
     sql_lines.append("-- 3. SEED 12 MATA PELAJARAN")
+    sql_lines.append("DO $$")
+    sql_lines.append("DECLARE")
+    sql_lines.append("  sub RECORD;")
+    sql_lines.append("  target_sub_id UUID;")
+    sql_lines.append("BEGIN")
+    sql_lines.append("  FOR sub IN")
+    sql_lines.append("    SELECT * FROM (VALUES")
+    sub_values = []
     for s in subjects_master.values():
-        nama_esc = s['nama_mapel'].replace("'", "''")
-        kode_mapel = s['kode_mapel']
-        sql_lines.append(f"""INSERT INTO public.subjects (nama_mapel, kode_mapel)
-VALUES ('{nama_esc}', '{kode_mapel}')
-ON CONFLICT (kode_mapel) DO UPDATE SET nama_mapel = EXCLUDED.nama_mapel;""")
+        n = s['nama_mapel'].replace("'", "''")
+        k = s['kode_mapel']
+        sub_values.append(f"      ('{n}', '{k}')")
+    sql_lines.append(",\n".join(sub_values))
+    sql_lines.append("    ) AS t(nama, kode)")
+    sql_lines.append("  LOOP")
+    sql_lines.append("    -- Cari id mapel yang sudah ada berdasarkan kode atau nama")
+    sql_lines.append("    SELECT id INTO target_sub_id FROM public.subjects WHERE kode_mapel = sub.kode LIMIT 1;")
+    sql_lines.append("    IF target_sub_id IS NULL THEN")
+    sql_lines.append("      SELECT id INTO target_sub_id FROM public.subjects WHERE nama_mapel = sub.nama LIMIT 1;")
+    sql_lines.append("    END IF;")
+    sql_lines.append("    IF target_sub_id IS NOT NULL THEN")
+    sql_lines.append("      UPDATE public.subjects SET nama_mapel = sub.nama, kode_mapel = sub.kode WHERE id = target_sub_id;")
+    sql_lines.append("    ELSE")
+    sql_lines.append("      INSERT INTO public.subjects (nama_mapel, kode_mapel) VALUES (sub.nama, sub.kode);")
+    sql_lines.append("    END IF;")
+    sql_lines.append("  END LOOP;")
+    sql_lines.append("END $$;\n")
 
-    sql_lines.append("\n-- 4. SEED 23 RUANG KELAS / ROMBEL & PENETAPAN WALI KELAS")
+    # 4. SEED 23 RUANG KELAS / ROMBEL & PENETAPAN WALI KELAS
+    sql_lines.append("-- 4. SEED 23 RUANG KELAS / ROMBEL & PENETAPAN WALI KELAS")
+    sql_lines.append("DO $$")
+    sql_lines.append("DECLARE")
+    sql_lines.append("  rm RECORD;")
+    sql_lines.append("  target_rm_id UUID;")
+    sql_lines.append("  wali_id UUID;")
+    sql_lines.append("BEGIN")
     for c in classes_master:
         cls_name = c['nama_ruangan'].replace("'", "''")
         tingkat = c['tingkat']
         kode_qr = c['kode_qr']
         w_kode = c['wali_kelas_kode']
         sql_lines.append(f"""
-INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
-VALUES (
-  '{cls_name}',
-  'Gedung Kelas {tingkat}',
-  'Ruang Belajar {cls_name} TP 2026/2027',
-  '{tingkat}',
-  '{kode_qr}',
-  (SELECT id FROM public.profiles WHERE kode_guru = {w_kode} LIMIT 1)
-)
-ON CONFLICT (nama_ruangan) DO UPDATE SET
-  tingkat = EXCLUDED.tingkat,
-  wali_kelas_id = EXCLUDED.wali_kelas_id;""")
+  -- Ruang: {cls_name}
+  SELECT id INTO wali_id FROM public.profiles WHERE kode_guru = {w_kode} LIMIT 1;
+  SELECT id INTO target_rm_id FROM public.rooms WHERE nama_ruangan = '{cls_name}' LIMIT 1;
+  IF target_rm_id IS NULL THEN
+    SELECT id INTO target_rm_id FROM public.rooms WHERE kode_qr = '{kode_qr}' LIMIT 1;
+  END IF;
+
+  IF target_rm_id IS NOT NULL THEN
+    UPDATE public.rooms SET
+      nama_ruangan = '{cls_name}',
+      gedung = 'Gedung Kelas {tingkat}',
+      deskripsi = 'Ruang Belajar {cls_name} TP 2026/2027',
+      tingkat = '{tingkat}',
+      kode_qr = '{kode_qr}',
+      wali_kelas_id = wali_id
+    WHERE id = target_rm_id;
+  ELSE
+    INSERT INTO public.rooms (nama_ruangan, gedung, deskripsi, tingkat, kode_qr, wali_kelas_id)
+    VALUES ('{cls_name}', 'Gedung Kelas {tingkat}', 'Ruang Belajar {cls_name} TP 2026/2027', '{tingkat}', '{kode_qr}', wali_id);
+  END IF;
+""")
+    sql_lines.append("END $$;\n")
 
     # 5. SEED JADWAL PIKET
-    sql_lines.append("\n-- 5. SEED JADWAL PIKET GURU")
+    sql_lines.append("-- 5. SEED JADWAL PIKET GURU")
+    sql_lines.append("DELETE FROM public.picket_schedules;")
     for p in picket_master:
         hari = p['hari']
         kode_g = p['kode_guru']
@@ -620,10 +659,7 @@ VALUES (
   (SELECT id FROM public.profiles WHERE kode_guru = {kode_g} LIMIT 1),
   '{nama_pet}',
   '{catatan}'
-)
-ON CONFLICT (hari, teacher_id) DO UPDATE SET
-  nama_petugas = EXCLUDED.nama_petugas,
-  catatan = EXCLUDED.catatan;""")
+);""")
 
     # 6. SEED JADWAL KBM
     sql_lines.append("\n-- 6. SEED SELURUH JADWAL PELAJARAN KBM (391 Sesi)")
@@ -645,11 +681,12 @@ ON CONFLICT (hari, teacher_id) DO UPDATE SET
 
         s_obj = subjects_master.get(s_code)
         kode_mapel = s_obj['kode_mapel'] if s_obj else f"{s_code}"
+        nama_mapel_esc = s_obj['nama_mapel'].replace("'", "''") if s_obj else ""
 
         val = f"""  (
     (SELECT id FROM public.profiles WHERE kode_guru = {t_code} LIMIT 1),
-    (SELECT id FROM public.subjects WHERE kode_mapel = '{kode_mapel}' LIMIT 1),
-    (SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas {cls}' LIMIT 1),
+    COALESCE((SELECT id FROM public.subjects WHERE kode_mapel = '{kode_mapel}' LIMIT 1), (SELECT id FROM public.subjects WHERE nama_mapel = '{nama_mapel_esc}' LIMIT 1)),
+    COALESCE((SELECT id FROM public.rooms WHERE nama_ruangan = 'Ruang Kelas {cls}' LIMIT 1), (SELECT id FROM public.rooms WHERE kode_qr = 'QR-RUANG-KLS{cls}' LIMIT 1)),
     '{hari}',
     '{j_mulai}',
     '{j_selesai}',
