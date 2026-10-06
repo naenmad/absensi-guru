@@ -24,7 +24,7 @@ export default function NavLink({ href, label, children, highlight }: NavLinkPro
         <div
           className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
             isActive
-              ? 'bg-slate-900 text-white'
+              ? 'bg-[#3a4a83] text-white shadow-xs'
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
           }`}
         >
@@ -32,7 +32,7 @@ export default function NavLink({ href, label, children, highlight }: NavLinkPro
         </div>
         <span
           className={`text-[10px] font-medium mt-1 ${
-            isActive ? 'text-slate-900 font-semibold' : 'text-slate-500'
+            isActive ? 'text-[#3a4a83] font-bold' : 'text-slate-500'
           }`}
         >
           {label}
@@ -46,7 +46,7 @@ export default function NavLink({ href, label, children, highlight }: NavLinkPro
       href={href}
       className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-lg transition ${
         isActive
-          ? 'text-slate-900 font-semibold'
+          ? 'text-[#3a4a83] font-bold'
           : 'text-slate-500 hover:text-slate-900'
       }`}
     >

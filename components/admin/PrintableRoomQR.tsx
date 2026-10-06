@@ -32,7 +32,7 @@ export default function PrintableRoomQR({
           <div className="flex items-center gap-2">
             <button
               onClick={handlePrint}
-              className="py-1.5 px-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+              className="py-1.5 px-3 bg-[#3a4a83] hover:bg-[#2d3b6a] text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Cetak Lembar QR</span>
@@ -53,7 +53,11 @@ export default function PrintableRoomQR({
           {/* Header Sekolah */}
           <div className="border-b border-slate-200 pb-3 space-y-0.5">
             <div className="flex items-center justify-center gap-2 text-slate-900">
-              <School className="w-5 h-5 text-slate-800 print:text-black" />
+              <img
+                src="/logo-smpn8karbar.webp"
+                alt="Logo"
+                className="w-6 h-6 object-contain"
+              />
               <span className="font-bold text-xs uppercase tracking-wider">{namaSekolah}</span>
             </div>
             <h2 className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">
@@ -67,7 +71,7 @@ export default function PrintableRoomQR({
               {room.nama_ruangan}
             </h1>
             {room.gedung && (
-              <div className="flex items-center justify-center gap-1 text-xs font-semibold text-blue-600 print:text-black pt-1">
+              <div className="flex items-center justify-center gap-1 text-xs font-semibold text-[#3a4a83] print:text-black pt-1">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>{room.gedung}</span>
               </div>
@@ -84,6 +88,14 @@ export default function PrintableRoomQR({
               size={230}
               level="H"
               includeMargin={true}
+              imageSettings={{
+                src: '/logo-smpn8karbar.webp',
+                x: undefined,
+                y: undefined,
+                height: 38,
+                width: 38,
+                excavate: true,
+              }}
             />
           </div>
 

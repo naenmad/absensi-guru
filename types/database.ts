@@ -13,6 +13,7 @@ export interface Profile {
   email: string;
   role: UserRole;
   jabatan: string | null;
+  kode_guru?: number | null;
   no_hp: string | null;
   avatar_url: string | null;
   created_at?: string;
@@ -80,6 +81,9 @@ export interface Room {
   nama_ruangan: string;
   kode_qr: string;
   gedung: string | null;
+  tingkat?: string | null;
+  wali_kelas_id?: string | null;
+  wali_kelas?: Profile;
   deskripsi: string | null;
   created_at?: string;
 }
@@ -93,6 +97,7 @@ export interface Schedule {
   hari: string;
   jam_mulai: string;
   jam_selesai: string;
+  jam_ke?: string | null;
   created_at?: string;
   profiles?: Profile;
   subjects?: Subject;
@@ -113,4 +118,15 @@ export interface RoomAttendance {
   profiles?: Profile;
   rooms?: Room;
   schedules?: Schedule;
+}
+
+// 5. JADWAL PIKET GURU
+export interface PicketSchedule {
+  id: string;
+  hari: string;
+  teacher_id: string | null;
+  nama_petugas: string;
+  catatan?: string | null;
+  created_at?: string;
+  profiles?: Profile;
 }

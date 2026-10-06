@@ -49,15 +49,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {/* Sidebar Desktop */}
       <aside className="w-64 bg-slate-950 text-slate-200 flex flex-col shrink-0 border-r border-slate-800/80">
         {/* Brand */}
-        <div className="p-5 border-b border-slate-800/80 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-white shrink-0">
-            <School className="w-5 h-5 text-sky-400" />
+        <div className="p-4 border-b border-slate-800/80 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-white p-1 border border-slate-700 flex items-center justify-center shrink-0">
+            <img
+              src="/logo-smpn8karbar.webp"
+              alt="Logo"
+              className="w-full h-full object-contain"
+            />
           </div>
           <div className="min-w-0">
-            <h1 className="font-semibold text-xs text-white truncate tracking-tight">
+            <h1 className="font-bold text-xs text-white truncate tracking-tight">
               {settings?.nama_sekolah || 'SMP Negeri 8 Karawang Barat'}
             </h1>
-            <span className="text-[11px] text-slate-400">Portal Administrasi</span>
+            <span className="text-[10px] text-slate-400">Portal Administrasi</span>
           </div>
         </div>
 

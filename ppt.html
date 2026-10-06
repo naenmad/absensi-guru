@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Process Flow Warranty Rusty (Export Pass)</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0b0f19;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding: 20px 0;
+    }
+
+    /* Floating Toolbar */
+    .top-actions {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      z-index: 100;
+    }
+
+    .action-btn {
+      background: #1e293b;
+      color: #f8fafc;
+      border: 1px solid #334155;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .action-btn:hover {
+      background: #2563eb;
+      border-color: #3b82f6;
+      transform: translateY(-1px);
+    }
+
+    .action-btn.secondary:hover {
+      background: #059669;
+      border-color: #10b981;
+    }
+
+    /* 16:9 Presentation Canvas */
+    .slide {
+      width: 1280px;
+      height: 720px;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+      padding: 34px 30px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transform-origin: center center;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 16px;
+      border-bottom: 1.5px solid #f1f5f9;
+      margin-bottom: 16px;
+    }
+
+    .title-group h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .title-group h1 .tag {
+      color: #059669;
+      background: #ecfdf5;
+      padding: 2px 10px;
+      border-radius: 6px;
+      font-size: 20px;
+      margin-left: 6px;
+      border: 1px solid #a7f3d0;
+    }
+
+    .title-group p {
+      font-size: 12.5px;
+      color: #64748b;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      background: #f8fafc;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+    }
+
+    .legend-rect {
+      width: 18px;
+      height: 18px;
+      background: #f0fdf4;
+      border: 2px solid #16a34a;
+      border-radius: 4px;
+    }
+
+    .legend-diamond {
+      width: 14px;
+      height: 14px;
+      background: #dbeafe;
+      border: 2px solid #2563eb;
+      transform: rotate(45deg);
+      border-radius: 2px;
+    }
+
+    /* Flow Container */
+    .flow-wrapper {
+      flex: 1;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fbfcfe;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 24px 0;
+    }
+
+    /* Flow Row: 11 steps + 10 arrows = 1174px centered */
+    .flow-row {
+      width: 1174px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    /* Step Column: 94px */
+    .step-col {
+      width: 94px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* Shape Container: 88px x 88px (1:1 Ratio, Never Gepeng) */
+    .shape-container {
+      width: 88px;
+      height: 88px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin: 0 auto;
+    }
+
+    .shape-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 88px;
+      height: 88px;
+      filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.05));
+    }
+
+    /* Green Box */
+    .svg-rect {
+      fill: #f0fdf4;
+      stroke: #16a34a;
+      stroke-width: 2.5;
+      rx: 12px;
+      ry: 12px;
+    }
+
+    /* Blue Diamond */
+    .svg-diamond {
+      fill: #dbeafe;
+      stroke: #2563eb;
+      stroke-width: 2.5;
+      stroke-linejoin: round;
+    }
+
+    /* Shape Label (Without numbers, text only) */
+    .shape-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      height: 100%;
+      padding: 6px;
+    }
+
+    .shape-name {
+      font-size: 9.5px;
+      font-weight: 800;
+      line-height: 1.25;
+      text-transform: uppercase;
+      max-width: 66px;
+      letter-spacing: -0.01em;
+    }
+
+    .node-green .shape-name {
+      color: #15803d;
+    }
+
+    .node-blue .shape-name {
+      color: #1e40af;
+    }
+
+    /* Connecting stem */
+    .step-stem {
+      width: 2px;
+      height: 12px;
+      margin: 4px auto;
+    }
+
+    .node-green .step-stem {
+      background: #86efac;
+    }
+
+    .node-blue .step-stem {
+      background: #93c5fd;
+    }
+
+    /* Description Card Below Shape */
+    .desc-card {
+      width: 94px;
+      min-height: 155px;
+      border-radius: 9px;
+      padding: 9px 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin: 0 auto;
+    }
+
+    .node-green .desc-card {
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+    }
+
+    .node-blue .desc-card {
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+    }
+
+    .desc-text {
+      font-size: 9px;
+      font-weight: 600;
+      color: #166534;
+      line-height: 1.4;
+    }
+
+    .desc-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      text-align: left;
+    }
+
+    .desc-list li {
+      font-size: 8.5px;
+      font-weight: 600;
+      color: #1e3a8a;
+      line-height: 1.35;
+      margin-bottom: 3.5px;
+      display: flex;
+      align-items: flex-start;
+      gap: 3px;
+    }
+
+    .desc-list li::before {
+      content: "•";
+      color: #2563eb;
+      font-weight: 800;
+      font-size: 10px;
+      line-height: 1;
+    }
+
+    /* Pipeline Arrow: 14px */
+    .pipe-arrow {
+      width: 14px;
+      height: 88px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    @page {
+      size: 1280px 720px;
+      margin: 0;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .top-actions { display: none !important; }
+      .slide {
+        box-shadow: none;
+        border-radius: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Toolbar -->
+  <div class="top-actions">
+    <a href="Process_Flow_Warranty_Rusty.pptx" download="Process_Flow_Warranty_Rusty.pptx" class="action-btn" style="text-decoration: none; background: #c2410c; border-color: #ea580c;">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+      📊 Download File PowerPoint (.pptx)
+    </a>
+    <button class="action-btn" onclick="downloadImage()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+      📸 Download Gambar (PNG HD)
+    </button>
+    <button class="action-btn secondary" onclick="window.print()">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+      🖨️ Simpan PDF / Print
+    </button>
+  </div>
+
+<div class="slide" id="slide">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="title-group">
+      <h1>Process Flow Warranty Rusty <span class="tag">Export Pass</span></h1>
+      <p>Standardized inspection sequence from incoming production material to final export delivery.</p>
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-rect"></div>
+        <span>Process / Assembly</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-diamond"></div>
+        <span>Inspection (Check)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flow Area: 11 Steps Perfectly Centered -->
+  <div class="flow-wrapper">
+    <div class="flow-row">
+
+      <!-- STEP 1: INCOMING -->
+      <div class="step-col node-green">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <rect x="3" y="3" width="82" height="82" class="svg-rect" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">INCOMING</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <p class="desc-text">
+            F/G part must have date production identify on surface
+          </p>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 2: PPIC -->
+      <div class="step-col node-blue">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <polygon points="44,4 84,44 44,84 4,44" class="svg-diamond" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">PPIC</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <ul class="desc-list">
+            <li>FI/FO</li>
+            <li>Identity pass export</li>
+            <li>Packing standard</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 3: SUB ASSY -->
+      <div class="step-col node-green">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <rect x="3" y="3" width="82" height="82" class="svg-rect" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">SUB ASSY</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <p class="desc-text">
+            Check past disty
+          </p>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 4: MAIN ASSY -->
+      <div class="step-col node-green">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <rect x="3" y="3" width="82" height="82" class="svg-rect" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">MAIN ASSY</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <p class="desc-text">
+            Standard assembly check
+          </p>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 5: CHECK MAN -->
+      <div class="step-col node-blue">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <polygon points="44,4 84,44 44,84 4,44" class="svg-diamond" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">CHECK MAN</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <ul class="desc-list">
+            <li>Apply anti rust</li>
+            <li>Check spatter</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 6: FINAL CHECK -->
+      <div class="step-col node-blue">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <polygon points="44,4 84,44 44,84 4,44" class="svg-diamond" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">FINAL CHECK</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <ul class="desc-list">
+            <li>Appearance &amp; anti rust</li>
+            <li>Spatter &amp; dimension</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 7: DOLLY -->
+      <div class="step-col node-blue">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <polygon points="44,4 84,44 44,84 4,44" class="svg-diamond" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">DOLLY</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <ul class="desc-list">
+            <li>Anti rust &amp; pallet</li>
+            <li>Qty verification</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 8: GATE IN DPC -->
+      <div class="step-col node-blue">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <polygon points="44,4 84,44 44,84 4,44" class="svg-diamond" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">GATE IN DPC</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <ul class="desc-list">
+            <li>Anti rust &amp; pallet std</li>
+            <li>Qty check</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 9: WH F/G -->
+      <div class="step-col node-green">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <rect x="3" y="3" width="82" height="82" class="svg-rect" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">WH F/G</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <p class="desc-text">
+            Storage environment control
+          </p>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 10: PDI -->
+      <div class="step-col node-blue">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <polygon points="44,4 84,44 44,84 4,44" class="svg-diamond" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">PDI</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <ul class="desc-list">
+            <li>Anti rust &amp; FI/FO</li>
+            <li>Pallet &amp; rusty check</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">
+        <svg width="14" height="12" viewBox="0 0 14 12">
+          <path d="M 1 6 L 11 6 M 7 2 L 12 6 L 7 10" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <!-- STEP 11: DELIVERY -->
+      <div class="step-col node-green">
+        <div class="shape-container">
+          <svg class="shape-svg" viewBox="0 0 88 88">
+            <rect x="3" y="3" width="82" height="82" class="svg-rect" />
+          </svg>
+          <div class="shape-content">
+            <span class="shape-name">DELIVERY</span>
+          </div>
+        </div>
+        <div class="step-stem"></div>
+        <div class="desc-card">
+          <p class="desc-text">
+            Export shipping &amp; container loading to customer
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function fit() {
+    const s = document.getElementById('slide');
+    const sx = (window.innerWidth - 60) / 1280;
+    const sy = (window.innerHeight - 100) / 720;
+    s.style.transform = 'scale(' + Math.min(sx, sy, 1) + ')';
+  }
+  window.addEventListener('resize', fit);
+  fit();
+
+  async function downloadImage() {
+    const slide = document.getElementById('slide');
+    const originalTransform = slide.style.transform;
+    slide.style.transform = 'none'; // Render at full 1280x720 16:9 native resolution
+    
+    try {
+      const canvas = await html2canvas(slide, {
+        scale: 2, // 2x Retina quality (2560x1440 HD)
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+      const link = document.createElement('a');
+      link.download = 'process-flow-warranty-rusty-16x9.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (e) {
+      alert('Gagal download otomatis. Silakan gunakan shortcut Mac: Cmd + Shift + 4 lalu tekan Spacebar.');
+    } finally {
+      slide.style.transform = originalTransform;
+    }
+  }
+</script>
+
+</body>
+</html>

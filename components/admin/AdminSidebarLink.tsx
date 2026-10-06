@@ -19,11 +19,11 @@ export default function AdminSidebarLink({ href, label, children }: AdminSidebar
       href={href}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition ${
         isActive
-          ? 'bg-slate-800 text-white font-semibold'
+          ? 'bg-[#3a4a83] text-white font-semibold shadow-xs'
           : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60 font-medium'
       }`}
     >
-      <div className={isActive ? 'text-sky-400' : 'text-slate-500'}>{children}</div>
+      <div className={isActive ? 'text-white' : 'text-slate-400'}>{children}</div>
       <span className="truncate">{label}</span>
     </Link>
   );

@@ -93,6 +93,7 @@ export async function createScheduleAction(prevState: any, formData: FormData) {
   const hari = formData.get('hari') as string;
   const jam_mulai = formData.get('jam_mulai') as string;
   const jam_selesai = formData.get('jam_selesai') as string;
+  const jam_ke = (formData.get('jam_ke') as string)?.trim() || null;
 
   if (!teacher_id || !subject_id || !room_id || !hari || !jam_mulai || !jam_selesai) {
     return { error: 'Semua kolom jadwal wajib diisi lengkap.' };
@@ -106,6 +107,7 @@ export async function createScheduleAction(prevState: any, formData: FormData) {
     hari,
     jam_mulai,
     jam_selesai,
+    ...(jam_ke ? { jam_ke } : {}),
   });
 
   if (error) {

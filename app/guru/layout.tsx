@@ -34,16 +34,20 @@ export default async function GuruLayout({ children }: { children: React.ReactNo
       <div className="w-full max-w-md bg-white min-h-screen flex flex-col border-x border-slate-200/80 shadow-xs relative pb-20">
         {/* Top Header */}
         <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-medium text-xs">
-              {profile?.nama?.charAt(0) || 'G'}
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200/80 p-0.5 bg-white flex items-center justify-center">
+              <img
+                src="/logo-smpn8karbar.webp"
+                alt="Logo"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <div>
-              <h2 className="text-xs font-semibold text-slate-900 leading-tight">
+            <div className="min-w-0">
+              <h2 className="text-xs font-bold text-slate-900 leading-tight truncate">
                 {profile?.nama || 'Guru'}
               </h2>
-              <p className="text-[11px] text-slate-500">
-                {profile?.nip ? `NIP. ${profile.nip}` : profile?.jabatan || 'Pendidik'} • SMPN 8 Karawang Barat
+              <p className="text-[10px] text-slate-500 truncate">
+                {profile?.nip ? `NIP. ${profile.nip}` : profile?.jabatan || 'Pendidik'}
               </p>
             </div>
           </div>

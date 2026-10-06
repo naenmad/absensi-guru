@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, MapPin, QrCode, BookOpen, FileText } from 'lucide-react';
+import { Calendar, Clock, CheckCircle2, AlertCircle, ArrowRight, ShieldCheck, MapPin, QrCode, BookOpen, FileText, Sparkles, Quote } from 'lucide-react';
 import LiveClock from '@/components/guru/LiveClock';
 import { getWIBDateString, getWIBDayName, formatTimeWIB } from '@/lib/date';
+import { getDailyQuote } from '@/lib/motivationalQuotes';
 
 export default async function GuruDashboardPage() {
   const supabase = await createClient();
@@ -58,11 +59,27 @@ export default async function GuruDashboardPage() {
     !!activeLeave;
   const sudahMasuk = !!todayAttendance?.jam_masuk;
   const sudahPulang = !!todayAttendance?.jam_pulang;
+  const dailyQuote = getDailyQuote();
 
   return (
     <div className="space-y-4">
-      {/* Jam Digital & Tanggal (Solid Dark Enterprise Card) */}
-      <div className="bg-slate-950 text-white rounded-xl p-5 border border-slate-800 shadow-xs space-y-3">
+      {/* Kata Motivasi Pendidik Hari Ini */}
+      <div className="rounded-xl p-3.5 bg-gradient-to-r from-[#3a4a83]/12 via-[#3a4a83]/6 to-slate-50 border border-[#3a4a83]/20 relative overflow-hidden">
+        <Quote className="w-8 h-8 text-[#3a4a83]/15 absolute right-2 top-2 pointer-events-none" />
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#3a4a83] mb-1">
+          <Sparkles className="w-3.5 h-3.5 text-[#3a4a83]" />
+          <span>Motivasi Pendidik Hari Ini</span>
+        </div>
+        <p className="text-xs italic text-slate-800 leading-relaxed font-medium">
+          &ldquo;{dailyQuote.quote}&rdquo;
+        </p>
+        <span className="text-[10px] font-semibold text-slate-500 block mt-1">
+          — {dailyQuote.author}
+        </span>
+      </div>
+
+      {/* Jam Digital & Tanggal */}
+      <div className="bg-gradient-to-br from-[#1e2744] to-[#11172a] text-white rounded-xl p-5 border border-[#3a4a83]/30 shadow-xs space-y-3">
         <div className="flex items-center justify-between text-xs text-slate-400 font-medium">
           <div className="flex items-center gap-1.5">
             <Calendar className="w-3.5 h-3.5 text-slate-400" />
