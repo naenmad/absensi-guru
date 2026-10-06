@@ -34,6 +34,7 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
     setPageSize,
     totalPages,
     totalItems,
+    filteredCount,
     startIndex,
     endIndex,
     searchQuery,
@@ -41,8 +42,7 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
   } = useDataTable<any>({
     data: currentSource,
     initialPageSize: 10,
-    pageSizeOptions: [6, 10, 20, 50],
-    searchFilter: (leave, q) => {
+    searchFilter: (leave: any, q: string) => {
       const nama = leave.profiles?.nama?.toLowerCase() || '';
       const nip = leave.profiles?.nip?.toLowerCase() || '';
       const jenis = leave.jenis?.toLowerCase() || '';
@@ -120,7 +120,6 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
         pageSize={pageSize}
         pageSizeOptions={[6, 10, 20, 50]}
         onPageSizeChange={setPageSize}
-        totalItems={totalItems}
       />
 
       {/* List Permohonan */}
@@ -236,9 +235,10 @@ export default function LeaveApprovalClient({ initialLeaves }: { initialLeaves: 
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            totalItems={totalItems}
             startIndex={startIndex}
             endIndex={endIndex}
+            totalFiltered={filteredCount}
+            totalAll={totalItems}
           />
         </div>
       )}

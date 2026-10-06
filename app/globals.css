@@ -50,8 +50,7 @@ body {
   header,
   nav,
   button,
-  .print-hidden,
-  .print\\:hidden {
+  .print-hidden {
     display: none !important;
   }
 }

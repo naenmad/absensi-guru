@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createRoomAction, deleteRoomAction } from '@/actions/schedule';
+import { createRoomAction, updateRoomAction, deleteRoomAction } from '@/actions/schedule';
 import {
   School,
   Plus,
@@ -13,6 +13,7 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle2,
+  Pencil,
 } from 'lucide-react';
 import { Room } from '@/types/database';
 import PrintableRoomQR from './PrintableRoomQR';
@@ -25,6 +26,7 @@ interface RoomManagerClientProps {
 
 export default function RoomManagerClient({ initialRooms, schoolName }: RoomManagerClientProps) {
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [selectedQRRoom, setSelectedQRRoom] = useState<Room | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -71,6 +73,26 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
     }
   }
 
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setFeedback(null);
+
+    const formData = new FormData(e.currentTarget);
+    const res = await updateRoomAction(null, formData);
+    setLoading(false);
+
+    if (res.error) {
+      setFeedback({ error: res.error });
+    } else {
+      setFeedback({ success: true, message: res.message });
+      setTimeout(() => {
+        setEditingRoom(null);
+        setFeedback(null);
+      }, 1200);
+    }
+  }
+
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Hapus ruang kelas "${name}"? Jadwal dan log presensi terkait di ruangan ini akan terhapus.`)) {
       return;
@@ -88,7 +110,7 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Ruang Kelas & QR Code</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Daftar ruangan belajar dan cetak QR Code unik untuk presensi mengajar
+            Daftar ruangan belajar, ubah data ruang, dan cetak QR Code unik untuk presensi mengajar
           </p>
         </div>
 
@@ -112,7 +134,6 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
         pageSize={pageSize}
         pageSizeOptions={[6, 12, 24, 48]}
         onPageSizeChange={setPageSize}
-        totalItems={totalItems}
       />
 
       {/* Grid Ruang Kelas */}
@@ -138,14 +159,27 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                     <h3 className="text-base font-bold text-slate-900 mt-1.5">{room.nama_ruangan}</h3>
                   </div>
 
-                  <button
-                    onClick={() => handleDelete(room.id, room.nama_ruangan)}
-                    disabled={deleteId === room.id}
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
-                    title="Hapus Ruangan"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => {
+                        setFeedback(null);
+                        setEditingRoom(room);
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-[#3a4a83] hover:bg-[#3a4a83]/10 rounded-md transition cursor-pointer"
+                      title="Edit Ruangan"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(room.id, room.nama_ruangan)}
+                      disabled={deleteId === room.id}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
+                      title="Hapus Ruangan"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
 
                 {room.gedung && (
@@ -185,14 +219,15 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
-            totalItems={totalItems}
             startIndex={startIndex}
             endIndex={endIndex}
+            totalFiltered={filteredCount}
+            totalAll={totalItems}
           />
         </div>
       )}
 
-      {/* MODAL TAMBAH RUANG KELAS */}
+      {/* MODAL 1: TAMBAH RUANG KELAS */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
@@ -231,7 +266,7 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                   type="text"
                   name="nama_ruangan"
                   required
-                  placeholder="Contoh: Ruang 101, Lab Komputer"
+                  placeholder="Contoh: VII-A, Lab Komputer"
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                 />
               </div>
@@ -243,7 +278,7 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                 <input
                   type="text"
                   name="gedung"
-                  placeholder="Contoh: Gedung A Lantai 2"
+                  placeholder="Contoh: Gedung A Lantai 1"
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                 />
               </div>
@@ -274,6 +309,99 @@ export default function RoomManagerClient({ initialRooms, schoolName }: RoomMana
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <span>Simpan Ruangan</span>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: EDIT RUANG KELAS */}
+      {editingRoom && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-900">Edit Ruang Kelas</h3>
+                <p className="text-xs text-slate-500">Perbarui informasi ruang belajar</p>
+              </div>
+              <button
+                onClick={() => setEditingRoom(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {feedback && (
+              <div
+                className={`p-3 rounded-lg text-xs font-medium flex items-center gap-2 border ${
+                  feedback.success
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                }`}
+              >
+                {feedback.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                <span>{feedback.message || feedback.error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdate} className="space-y-3.5">
+              <input type="hidden" name="id" value={editingRoom.id} />
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nama Ruangan *
+                </label>
+                <input
+                  type="text"
+                  name="nama_ruangan"
+                  required
+                  defaultValue={editingRoom.nama_ruangan}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Gedung / Lantai (Opsional)
+                </label>
+                <input
+                  type="text"
+                  name="gedung"
+                  defaultValue={editingRoom.gedung || ''}
+                  placeholder="Contoh: Gedung A Lantai 1"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Keterangan (Opsional)
+                </label>
+                <textarea
+                  name="deskripsi"
+                  rows={2}
+                  defaultValue={editingRoom.deskripsi || ''}
+                  placeholder="Keterangan ruangan"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingRoom(null)}
+                  className="px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-[#3a4a83] hover:bg-[#2d3b6a] text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-200" /> : <span>Simpan Perubahan</span>}
                 </button>
               </div>
             </form>

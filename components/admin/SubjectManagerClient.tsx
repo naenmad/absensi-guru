@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { createSubjectAction, deleteSubjectAction } from '@/actions/schedule';
-import { BookOpen, Plus, Trash2, X, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { createSubjectAction, updateSubjectAction, deleteSubjectAction } from '@/actions/schedule';
+import { BookOpen, Plus, Trash2, X, Loader2, AlertCircle, CheckCircle2, Pencil } from 'lucide-react';
 import { Subject } from '@/types/database';
 import { useDataTable, DataTableControls, DataTablePagination } from '@/components/ui/DataTablePagination';
 
 export default function SubjectManagerClient({ initialSubjects }: { initialSubjects: Subject[] }) {
-  const [showModal, setShowAddModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ success?: boolean; message?: string; error?: string } | null>(
@@ -53,6 +54,26 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
     }
   }
 
+  async function handleUpdate(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setFeedback(null);
+
+    const formData = new FormData(e.currentTarget);
+    const res = await updateSubjectAction(null, formData);
+    setLoading(false);
+
+    if (res.error) {
+      setFeedback({ error: res.error });
+    } else {
+      setFeedback({ success: true, message: res.message });
+      setTimeout(() => {
+        setEditingSubject(null);
+        setFeedback(null);
+      }, 1200);
+    }
+  }
+
   async function handleDelete(id: string, name: string) {
     if (!confirm(`Hapus mata pelajaran "${name}"?`)) return;
     setDeleteId(id);
@@ -68,7 +89,7 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
         <div>
           <h1 className="text-xl font-bold text-slate-900 tracking-tight">Mata Pelajaran</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Daftar mata pelajaran yang diajarkan dalam jadwal kelas
+            Daftar kurikulum mata pelajaran yang diajarkan dalam jadwal kelas
           </p>
         </div>
 
@@ -126,14 +147,27 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
                       {sub.kode_mapel || '-'}
                     </td>
                     <td className="py-3.5 px-5 text-right">
-                      <button
-                        onClick={() => handleDelete(sub.id, sub.nama_mapel)}
-                        disabled={deleteId === sub.id}
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
-                        title="Hapus Mapel"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => {
+                            setFeedback(null);
+                            setEditingSubject(sub);
+                          }}
+                          className="p-1.5 text-slate-400 hover:text-[#3a4a83] hover:bg-[#3a4a83]/10 rounded-md transition cursor-pointer"
+                          title="Edit Mapel"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(sub.id, sub.nama_mapel)}
+                          disabled={deleteId === sub.id}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
+                          title="Hapus Mapel"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -154,8 +188,8 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
         />
       </div>
 
-      {/* MODAL TAMBAH MAPEL */}
-      {showModal && (
+      {/* MODAL 1: TAMBAH MAPEL */}
+      {showAddModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -190,7 +224,7 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
                   type="text"
                   name="nama_mapel"
                   required
-                  placeholder="Contoh: Matematika, Pemrograman Dasar"
+                  placeholder="Contoh: Matematika, Bahasa Sunda"
                   className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 placeholder:text-slate-400"
                 />
               </div>
@@ -221,6 +255,82 @@ export default function SubjectManagerClient({ initialSubjects }: { initialSubje
                   className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <span>Simpan Mapel</span>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: EDIT MAPEL */}
+      {editingSubject && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h3 className="text-sm font-bold text-slate-900">Edit Mata Pelajaran</h3>
+              <button
+                onClick={() => setEditingSubject(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {feedback && (
+              <div
+                className={`p-3 rounded-lg text-xs font-medium flex items-center gap-2 border ${
+                  feedback.success
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    : 'bg-red-50 text-red-800 border-red-200'
+                }`}
+              >
+                {feedback.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+                <span>{feedback.message || feedback.error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUpdate} className="space-y-3.5">
+              <input type="hidden" name="id" value={editingSubject.id} />
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Nama Mata Pelajaran *
+                </label>
+                <input
+                  type="text"
+                  name="nama_mapel"
+                  required
+                  defaultValue={editingSubject.nama_mapel}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Kode Mapel (Opsional)
+                </label>
+                <input
+                  type="text"
+                  name="kode_mapel"
+                  defaultValue={editingSubject.kode_mapel || ''}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setEditingSubject(null)}
+                  className="px-3.5 py-2 border border-slate-200 rounded-lg text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-4 py-2 bg-[#3a4a83] hover:bg-[#2d3b6a] text-white rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin text-slate-200" /> : <span>Simpan Perubahan</span>}
                 </button>
               </div>
             </form>

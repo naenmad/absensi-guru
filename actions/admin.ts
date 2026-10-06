@@ -100,13 +100,117 @@ export async function deleteTeacherAction(userId: string) {
 
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) {
-      return { error: error.message };
+      // Jika user tidak ada di auth.users (cth akun seeded lama), hapus langsung dari profiles
+      const { error: profileDelError } = await supabaseAdmin.from('profiles').delete().eq('id', userId);
+      if (profileDelError) return { error: profileDelError.message };
     }
 
     revalidatePath('/admin/guru');
     return { success: true };
   } catch (err: any) {
     return { error: err.message || 'Gagal menghapus akun guru.' };
+  }
+}
+
+/**
+ * Mengedit data profil guru & akun oleh Admin
+ */
+export async function updateTeacherAction(prevState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const nama = (formData.get('nama') as string)?.trim();
+  const nip = (formData.get('nip') as string)?.trim() || null;
+  const jabatan = (formData.get('jabatan') as string)?.trim() || 'Guru';
+  const no_hp = (formData.get('no_hp') as string)?.trim() || null;
+  const role = (formData.get('role') as string)?.trim() || 'GURU';
+
+  if (!id || !nama) {
+    return { error: 'ID dan Nama lengkap wajib diisi.' };
+  }
+
+  try {
+    const supabaseAdmin = createAdminClient();
+
+    // 1. Cek duplikasi NIP jika diisi
+    if (nip) {
+      const { data: existingNip } = await supabaseAdmin
+        .from('profiles')
+        .select('id')
+        .eq('nip', nip)
+        .neq('id', id)
+        .maybeSingle();
+
+      if (existingNip) {
+        return { error: `Guru dengan NIP ${nip} sudah terdaftar.` };
+      }
+    }
+
+    // 2. Update di tabel profiles
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        nama,
+        nip,
+        jabatan,
+        no_hp,
+        role: role as any,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (profileError) {
+      return { error: profileError.message };
+    }
+
+    // 3. Update metadata di auth.users jika akun auth ada
+    try {
+      await supabaseAdmin.auth.admin.updateUserById(id, {
+        user_metadata: {
+          nama,
+          full_name: nama,
+          nip,
+          role,
+          jabatan,
+        },
+      });
+    } catch (_) {
+      // Ignore auth update jika id belum ada di auth.users
+    }
+
+    revalidatePath('/admin/guru');
+    return { success: true, message: `Data guru ${nama} berhasil diperbarui!` };
+  } catch (err: any) {
+    return { error: err.message || 'Gagal memperbarui data guru.' };
+  }
+}
+
+/**
+ * Reset kata sandi guru oleh Admin
+ */
+export async function resetTeacherPasswordAction(prevState: any, formData: FormData) {
+  const userId = formData.get('userId') as string;
+  const newPassword = (formData.get('newPassword') as string)?.trim();
+
+  if (!userId || !newPassword) {
+    return { error: 'ID pengguna dan kata sandi baru wajib diisi.' };
+  }
+
+  if (newPassword.length < 6) {
+    return { error: 'Kata sandi baru minimal 6 karakter.' };
+  }
+
+  try {
+    const supabaseAdmin = createAdminClient();
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+      password: newPassword,
+    });
+
+    if (error) {
+      return { error: error.message };
+    }
+
+    return { success: true, message: 'Kata sandi berhasil direset!' };
+  } catch (err: any) {
+    return { error: err.message || 'Gagal mereset kata sandi.' };
   }
 }
 

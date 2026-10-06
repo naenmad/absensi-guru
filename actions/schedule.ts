@@ -39,6 +39,30 @@ export async function deleteSubjectAction(subjectId: string) {
   return { success: true };
 }
 
+export async function updateSubjectAction(prevState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const nama_mapel = (formData.get('nama_mapel') as string)?.trim();
+  const kode_mapel = (formData.get('kode_mapel') as string)?.trim() || null;
+
+  if (!id || !nama_mapel) {
+    return { error: 'ID dan Nama mata pelajaran wajib diisi.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('subjects').update({
+    nama_mapel,
+    kode_mapel,
+  }).eq('id', id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/admin/mapel');
+  revalidatePath('/admin/jadwal-pelajaran');
+  return { success: true, message: `Mata pelajaran "${nama_mapel}" berhasil diperbarui!` };
+}
+
 /**
  * 2. KELOLA RUANG KELAS (QR Code di-generate per Ruangan)
  */
@@ -72,6 +96,32 @@ export async function createRoomAction(prevState: any, formData: FormData) {
   revalidatePath('/admin/ruangan');
   revalidatePath('/admin/jadwal-pelajaran');
   return { success: true, message: `Ruang "${nama_ruangan}" berhasil dibuat dengan QR Code unik!` };
+}
+
+export async function updateRoomAction(prevState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const nama_ruangan = (formData.get('nama_ruangan') as string)?.trim();
+  const gedung = (formData.get('gedung') as string)?.trim() || null;
+  const deskripsi = (formData.get('deskripsi') as string)?.trim() || null;
+
+  if (!id || !nama_ruangan) {
+    return { error: 'ID dan Nama ruangan wajib diisi.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('rooms').update({
+    nama_ruangan,
+    gedung,
+    deskripsi,
+  }).eq('id', id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/admin/ruangan');
+  revalidatePath('/admin/jadwal-pelajaran');
+  return { success: true, message: `Ruangan "${nama_ruangan}" berhasil diperbarui!` };
 }
 
 export async function deleteRoomAction(roomId: string) {
@@ -116,6 +166,39 @@ export async function createScheduleAction(prevState: any, formData: FormData) {
 
   revalidatePath('/admin/jadwal-pelajaran');
   return { success: true, message: 'Jadwal pelajaran berhasil ditambahkan!' };
+}
+
+export async function updateScheduleAction(prevState: any, formData: FormData) {
+  const id = formData.get('id') as string;
+  const teacher_id = formData.get('teacher_id') as string;
+  const subject_id = formData.get('subject_id') as string;
+  const room_id = formData.get('room_id') as string;
+  const hari = formData.get('hari') as string;
+  const jam_mulai = formData.get('jam_mulai') as string;
+  const jam_selesai = formData.get('jam_selesai') as string;
+  const jam_ke = (formData.get('jam_ke') as string)?.trim() || null;
+
+  if (!id || !teacher_id || !subject_id || !room_id || !hari || !jam_mulai || !jam_selesai) {
+    return { error: 'Semua kolom jadwal wajib diisi lengkap.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from('schedules').update({
+    teacher_id,
+    subject_id,
+    room_id,
+    hari,
+    jam_mulai,
+    jam_selesai,
+    ...(jam_ke ? { jam_ke } : {}),
+  }).eq('id', id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/admin/jadwal-pelajaran');
+  return { success: true, message: 'Jadwal pelajaran berhasil diperbarui!' };
 }
 
 export async function deleteScheduleAction(scheduleId: string) {

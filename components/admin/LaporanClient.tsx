@@ -38,6 +38,7 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
     setPageSize,
     totalPages,
     totalItems,
+    filteredCount,
     startIndex,
     endIndex,
     searchQuery,
@@ -46,8 +47,7 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
   } = useDataTable<any>({
     data: monthFilteredData,
     initialPageSize: 25,
-    pageSizeOptions: [10, 25, 50, 100],
-    searchFilter: (att, q) => {
+    searchFilter: (att: any, q: string) => {
       const teacherName = att.profiles?.nama?.toLowerCase() || '';
       const nip = att.profiles?.nip?.toLowerCase() || '';
       const jabatan = att.profiles?.jabatan?.toLowerCase() || '';
@@ -138,7 +138,6 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
           pageSize={pageSize}
           pageSizeOptions={[10, 25, 50, 100]}
           onPageSizeChange={setPageSize}
-          totalItems={totalItems}
         />
       </div>
 
@@ -253,9 +252,10 @@ export default function LaporanClient({ initialAttendances }: LaporanClientProps
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
-          totalItems={totalItems}
           startIndex={startIndex}
           endIndex={endIndex}
+          totalFiltered={filteredCount}
+          totalAll={totalItems}
         />
       </div>
     </div>
