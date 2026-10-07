@@ -1,4 +1,4 @@
-export type UserRole = 'ADMIN' | 'GURU';
+export type UserRole = 'ADMIN' | 'GURU' | 'KEPSEK';
 
 export type AttendanceStatus = 'HADIR' | 'TERLAMBAT' | 'IZIN' | 'SAKIT' | 'ALPA';
 

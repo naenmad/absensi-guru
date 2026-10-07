@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import {
   ShieldCheck,
   GraduationCap,
@@ -30,22 +31,32 @@ export default async function HomePage(props: {
   // Jika sudah login dan tidak dalam mode preview dev eksplisit, arahkan ke dashboard masing-masing
   try {
     const supabase = await createClient();
+    const cookieStore = await cookies();
+    const cookieRole = cookieStore.get('auth_impersonate_role')?.value;
+
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (user && !forceShow) {
-      let role = user.user_metadata?.role;
+      let role = cookieRole || user.user_metadata?.role;
       if (!role) {
         const { data: profile } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, jabatan, email')
           .eq('id', user.id)
           .maybeSingle();
-        role = profile?.role || 'GURU';
+        if (
+          profile?.jabatan?.toLowerCase().includes('kepala sekolah') ||
+          profile?.email === 'kepsek@smpn8karawangbarat.sch.id'
+        ) {
+          role = 'KEPSEK';
+        } else {
+          role = profile?.role || 'GURU';
+        }
       }
 
-      if (role === 'ADMIN') {
+      if (role === 'ADMIN' || role === 'KEPSEK') {
         redirect('/admin');
       } else {
         redirect('/guru');

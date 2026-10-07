@@ -25,6 +25,8 @@ import {
   PanelLeftOpen,
   Sliders,
   Sparkles,
+  School,
+  ShieldCheck,
 } from 'lucide-react';
 import AdminSidebarLink from './AdminSidebarLink';
 import { Profile, SchoolSettings } from '@/types/database';
@@ -105,6 +107,16 @@ export default function AdminLayoutClient({
   const isCollapsed = sidebarMode === 'collapsed';
   const isHidden = sidebarMode === 'hidden';
 
+  const isKepsek =
+    profile?.role === 'KEPSEK' ||
+    profile?.jabatan?.toLowerCase().includes('kepala sekolah') ||
+    profile?.email === 'kepsek@smpn8karawangbarat.sch.id';
+
+  const portalSubtitle = isKepsek ? 'Portal Eksekutif Kepsek' : 'Portal Administrasi & TU';
+  const displayName = profile?.nama || (isKepsek ? 'Mamay Abdullah, S.Pd., M.Pd.' : 'Administrator');
+  const displayRole = isKepsek ? 'Kepala Sekolah' : 'Administrator TU';
+  const displayEmail = isKepsek ? (profile?.email || 'kepsek@smpn8karawangbarat.sch.id') : (profile?.email || 'admin@sekolah.sch.id');
+
   return (
     <div
       className={`h-screen w-screen overflow-hidden flex bg-slate-50 font-sans print:h-auto print:overflow-visible print:bg-white ${
@@ -139,7 +151,9 @@ export default function AdminLayoutClient({
               <h1 className="font-bold text-xs text-white truncate tracking-tight">
                 {settings?.nama_sekolah || 'SMP Negeri 8 Karawang Barat'}
               </h1>
-              <span className="text-[10px] text-slate-400">Portal Administrasi</span>
+              <span className={`text-[10px] ${isKepsek ? 'text-amber-400 font-semibold' : 'text-slate-400'}`}>
+                {portalSubtitle}
+              </span>
             </div>
           </div>
           <button
@@ -152,91 +166,149 @@ export default function AdminLayoutClient({
 
         {/* Links Mobile */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-            Menu Utama
-          </div>
-          <AdminSidebarLink
-            href="/admin"
-            label="Dashboard Ringkasan"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <LayoutDashboard className="w-4 h-4" />
-          </AdminSidebarLink>
-          <AdminSidebarLink
-            href="/admin/guru"
-            label="Data Guru & Akun"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <Users className="w-4 h-4" />
-          </AdminSidebarLink>
+          {isKepsek ? (
+            /* Menu Eksekutif Khusus Kepala Sekolah */
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-amber-500 uppercase tracking-wider">
+                Ringkasan & Persetujuan
+              </div>
+              <AdminSidebarLink
+                href="/admin"
+                label="Dashboard Eksekutif"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <LayoutDashboard className="w-4 h-4 text-amber-400" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/persetujuan"
+                label="Persetujuan Izin & Cuti"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <FileCheck2 className="w-4 h-4 text-emerald-400" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/laporan"
+                label="Rekapitulasi Laporan"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <FileSpreadsheet className="w-4 h-4 text-sky-400" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/statistik"
+                label="Statistik & Kinerja"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <BarChart3 className="w-4 h-4 text-indigo-400" />
+              </AdminSidebarLink>
 
-          <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-            Akademik & Ruangan
-          </div>
-          <AdminSidebarLink
-            href="/admin/mapel"
-            label="Mata Pelajaran"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <BookOpen className="w-4 h-4" />
-          </AdminSidebarLink>
-          <AdminSidebarLink
-            href="/admin/ruangan"
-            label="Ruang Kelas & QR"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <QrCode className="w-4 h-4" />
-          </AdminSidebarLink>
-          <AdminSidebarLink
-            href="/admin/jadwal-pelajaran"
-            label="Jadwal Pelajaran"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <CalendarDays className="w-4 h-4" />
-          </AdminSidebarLink>
+              <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-amber-500 uppercase tracking-wider">
+                Supervisi Guru & KBM
+              </div>
+              <AdminSidebarLink
+                href="/admin/jadwal-pelajaran"
+                label="Supervisi Jadwal KBM"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <CalendarDays className="w-4 h-4 text-purple-400" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/guru"
+                label="Direktori Dewan Guru"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <Users className="w-4 h-4 text-amber-300" />
+              </AdminSidebarLink>
+            </>
+          ) : (
+            /* Menu Lengkap Operator Admin TU */
+            <>
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Menu Utama
+              </div>
+              <AdminSidebarLink
+                href="/admin"
+                label="Dashboard Ringkasan"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <LayoutDashboard className="w-4 h-4" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/guru"
+                label="Data Guru & Akun"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <Users className="w-4 h-4" />
+              </AdminSidebarLink>
 
-          <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-            Konfigurasi & Rekap
-          </div>
-          <AdminSidebarLink
-            href="/admin/jadwal"
-            label="Lokasi & Jam Kerja"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <MapPin className="w-4 h-4" />
-          </AdminSidebarLink>
-          <AdminSidebarLink
-            href="/admin/persetujuan"
-            label="Persetujuan Izin"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <FileCheck2 className="w-4 h-4" />
-          </AdminSidebarLink>
-          <AdminSidebarLink
-            href="/admin/statistik"
-            label="Statistik & Kinerja"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <BarChart3 className="w-4 h-4" />
-          </AdminSidebarLink>
-          <AdminSidebarLink
-            href="/admin/laporan"
-            label="Rekapitulasi Laporan"
-            onClick={() => setIsMobileOpen(false)}
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-          </AdminSidebarLink>
+              <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Akademik & Ruangan
+              </div>
+              <AdminSidebarLink
+                href="/admin/mapel"
+                label="Mata Pelajaran"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <BookOpen className="w-4 h-4" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/ruangan"
+                label="Ruang Kelas & QR"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <QrCode className="w-4 h-4" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/jadwal-pelajaran"
+                label="Jadwal Pelajaran"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <CalendarDays className="w-4 h-4" />
+              </AdminSidebarLink>
+
+              <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                Konfigurasi & Rekap
+              </div>
+              <AdminSidebarLink
+                href="/admin/jadwal"
+                label="Lokasi & Jam Kerja"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <MapPin className="w-4 h-4" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/persetujuan"
+                label="Persetujuan Izin"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <FileCheck2 className="w-4 h-4" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/statistik"
+                label="Statistik & Kinerja"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <BarChart3 className="w-4 h-4" />
+              </AdminSidebarLink>
+              <AdminSidebarLink
+                href="/admin/laporan"
+                label="Rekapitulasi Laporan"
+                onClick={() => setIsMobileOpen(false)}
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+              </AdminSidebarLink>
+            </>
+          )}
         </nav>
 
         {/* Footer Profile Mobile */}
         <div className="p-3.5 border-t border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 text-slate-300 font-semibold flex items-center justify-center text-xs shrink-0 border border-slate-800">
-              {profile?.nama?.charAt(0) || 'A'}
+            <div className={`w-8 h-8 rounded-lg ${isKepsek ? 'bg-amber-600 text-white' : 'bg-slate-900 text-slate-300'} font-semibold flex items-center justify-center text-xs shrink-0 border border-slate-800`}>
+              {displayName.charAt(0)}
             </div>
             <div className="truncate">
-              <p className="text-xs font-medium text-slate-200 truncate">{profile?.nama || 'Admin'}</p>
-              <p className="text-[10px] text-slate-500 truncate">{profile?.email || 'admin'}</p>
+              <p className="text-xs font-medium text-slate-200 truncate">{displayName}</p>
+              <p className={`text-[10px] ${isKepsek ? 'text-amber-400' : 'text-slate-500'} truncate`}>{displayRole}</p>
             </div>
           </div>
           <form action={logoutAction}>
@@ -274,61 +346,105 @@ export default function AdminLayoutClient({
                 <h1 className="font-bold text-xs text-white truncate tracking-tight">
                   {settings?.nama_sekolah || 'SMP Negeri 8 Karawang Barat'}
                 </h1>
-                <span className="text-[10px] text-slate-400">Portal Administrasi</span>
+                <span className={`text-[10px] ${isKepsek ? 'text-amber-400 font-semibold' : 'text-slate-400'}`}>
+                  {portalSubtitle}
+                </span>
               </div>
             )}
           </div>
 
           {/* Nav Links Desktop */}
           <nav className="flex-1 p-2 space-y-1 overflow-y-auto custom-scrollbar">
-            {!isCollapsed && (
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                Menu Utama
-              </div>
-            )}
-            <AdminSidebarLink href="/admin" label="Dashboard Ringkasan" isCollapsed={isCollapsed}>
-              <LayoutDashboard className="w-4 h-4" />
-            </AdminSidebarLink>
-            <AdminSidebarLink href="/admin/guru" label="Data Guru & Akun" isCollapsed={isCollapsed}>
-              <Users className="w-4 h-4" />
-            </AdminSidebarLink>
+            {isKepsek ? (
+              /* Menu Eksekutif Khusus Kepala Sekolah */
+              <>
+                {!isCollapsed && (
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-amber-500 uppercase tracking-wider">
+                    Ringkasan & Persetujuan
+                  </div>
+                )}
+                <AdminSidebarLink href="/admin" label="Dashboard Eksekutif" isCollapsed={isCollapsed}>
+                  <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/persetujuan" label="Persetujuan Izin & Cuti" isCollapsed={isCollapsed}>
+                  <FileCheck2 className="w-4 h-4 text-emerald-400" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/laporan" label="Rekapitulasi Laporan" isCollapsed={isCollapsed}>
+                  <FileSpreadsheet className="w-4 h-4 text-sky-400" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/statistik" label="Statistik & Kinerja" isCollapsed={isCollapsed}>
+                  <BarChart3 className="w-4 h-4 text-indigo-400" />
+                </AdminSidebarLink>
 
-            {!isCollapsed && (
-              <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                Akademik & Ruangan
-              </div>
-            )}
-            <AdminSidebarLink href="/admin/mapel" label="Mata Pelajaran" isCollapsed={isCollapsed}>
-              <BookOpen className="w-4 h-4" />
-            </AdminSidebarLink>
-            <AdminSidebarLink href="/admin/ruangan" label="Ruang Kelas & QR" isCollapsed={isCollapsed}>
-              <QrCode className="w-4 h-4" />
-            </AdminSidebarLink>
-            <AdminSidebarLink
-              href="/admin/jadwal-pelajaran"
-              label="Jadwal Pelajaran"
-              isCollapsed={isCollapsed}
-            >
-              <CalendarDays className="w-4 h-4" />
-            </AdminSidebarLink>
+                {!isCollapsed && (
+                  <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-amber-500 uppercase tracking-wider">
+                    Supervisi Guru & KBM
+                  </div>
+                )}
+                <AdminSidebarLink
+                  href="/admin/jadwal-pelajaran"
+                  label="Supervisi Jadwal KBM"
+                  isCollapsed={isCollapsed}
+                >
+                  <CalendarDays className="w-4 h-4 text-purple-400" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/guru" label="Direktori Dewan Guru" isCollapsed={isCollapsed}>
+                  <Users className="w-4 h-4 text-amber-300" />
+                </AdminSidebarLink>
+              </>
+            ) : (
+              /* Menu Lengkap Operator Admin TU */
+              <>
+                {!isCollapsed && (
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                    Menu Utama
+                  </div>
+                )}
+                <AdminSidebarLink href="/admin" label="Dashboard Ringkasan" isCollapsed={isCollapsed}>
+                  <LayoutDashboard className="w-4 h-4" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/guru" label="Data Guru & Akun" isCollapsed={isCollapsed}>
+                  <Users className="w-4 h-4" />
+                </AdminSidebarLink>
 
-            {!isCollapsed && (
-              <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-                Konfigurasi & Rekap
-              </div>
+                {!isCollapsed && (
+                  <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                    Akademik & Ruangan
+                  </div>
+                )}
+                <AdminSidebarLink href="/admin/mapel" label="Mata Pelajaran" isCollapsed={isCollapsed}>
+                  <BookOpen className="w-4 h-4" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/ruangan" label="Ruang Kelas & QR" isCollapsed={isCollapsed}>
+                  <QrCode className="w-4 h-4" />
+                </AdminSidebarLink>
+                <AdminSidebarLink
+                  href="/admin/jadwal-pelajaran"
+                  label="Jadwal Pelajaran"
+                  isCollapsed={isCollapsed}
+                >
+                  <CalendarDays className="w-4 h-4" />
+                </AdminSidebarLink>
+
+                {!isCollapsed && (
+                  <div className="px-3 pt-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+                    Konfigurasi & Rekap
+                  </div>
+                )}
+                <AdminSidebarLink href="/admin/jadwal" label="Lokasi & Jam Kerja" isCollapsed={isCollapsed}>
+                  <MapPin className="w-4 h-4" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/persetujuan" label="Persetujuan Izin" isCollapsed={isCollapsed}>
+                  <FileCheck2 className="w-4 h-4" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/statistik" label="Statistik & Kinerja" isCollapsed={isCollapsed}>
+                  <BarChart3 className="w-4 h-4" />
+                </AdminSidebarLink>
+                <AdminSidebarLink href="/admin/laporan" label="Rekapitulasi Laporan" isCollapsed={isCollapsed}>
+                  <FileSpreadsheet className="w-4 h-4" />
+                </AdminSidebarLink>
+              </>
             )}
-            <AdminSidebarLink href="/admin/jadwal" label="Lokasi & Jam Kerja" isCollapsed={isCollapsed}>
-              <MapPin className="w-4 h-4" />
-            </AdminSidebarLink>
-            <AdminSidebarLink href="/admin/persetujuan" label="Persetujuan Izin" isCollapsed={isCollapsed}>
-              <FileCheck2 className="w-4 h-4" />
-            </AdminSidebarLink>
-            <AdminSidebarLink href="/admin/statistik" label="Statistik & Kinerja" isCollapsed={isCollapsed}>
-              <BarChart3 className="w-4 h-4" />
-            </AdminSidebarLink>
-            <AdminSidebarLink href="/admin/laporan" label="Rekapitulasi Laporan" isCollapsed={isCollapsed}>
-              <FileSpreadsheet className="w-4 h-4" />
-            </AdminSidebarLink>
           </nav>
 
           {/* Quick Collapse & Mode Toggle Footer */}
@@ -357,15 +473,15 @@ export default function AdminLayoutClient({
           {/* Footer User Profile Desktop */}
           <div className="p-3 border-t border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 text-slate-300 font-semibold flex items-center justify-center text-xs shrink-0 border border-slate-800">
-                {profile?.nama?.charAt(0) || 'A'}
+              <div className={`w-8 h-8 rounded-lg ${isKepsek ? 'bg-amber-600 text-white' : 'bg-slate-900 text-slate-300'} font-semibold flex items-center justify-center text-xs shrink-0 border border-slate-800`}>
+                {displayName.charAt(0)}
               </div>
               {!isCollapsed && (
                 <div className="truncate min-w-0">
                   <p className="text-xs font-medium text-slate-200 truncate">
-                    {profile?.nama || 'Administrator'}
+                    {displayName}
                   </p>
-                  <p className="text-[10px] text-slate-500 truncate">{profile?.email || 'admin'}</p>
+                  <p className={`text-[10px] ${isKepsek ? 'text-amber-400' : 'text-slate-500'} truncate`}>{displayRole}</p>
                 </div>
               )}
             </div>
@@ -453,17 +569,24 @@ export default function AdminLayoutClient({
 
           {/* Topbar Right Actions */}
           <div className="flex items-center gap-3">
-            <span className="px-2.5 py-1 bg-[#3a4a83]/10 text-[#3a4a83] rounded-md text-xs font-bold border border-[#3a4a83]/20 flex items-center gap-1.5">
-              <Sparkles className="w-3 h-3 text-[#3a4a83]" />
-              <span>Admin Sekolah</span>
-            </span>
+            {isKepsek ? (
+              <span className="px-2.5 py-1 bg-amber-500/10 text-amber-800 rounded-md text-xs font-bold border border-amber-300 flex items-center gap-1.5 shadow-2xs">
+                <School className="w-3.5 h-3.5 text-amber-600" />
+                <span>Kepala Sekolah</span>
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 bg-[#3a4a83]/10 text-[#3a4a83] rounded-md text-xs font-bold border border-[#3a4a83]/20 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#3a4a83]" />
+                <span>Administrator TU</span>
+              </span>
+            )}
 
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="w-7 h-7 rounded-full bg-[#3a4a83] text-white flex items-center justify-center font-bold text-xs">
-                {profile?.nama?.charAt(0) || 'A'}
+              <div className={`w-7 h-7 rounded-full ${isKepsek ? 'bg-amber-600' : 'bg-[#3a4a83]'} text-white flex items-center justify-center font-bold text-xs shadow-2xs`}>
+                {displayName.charAt(0)}
               </div>
-              <span className="text-xs font-semibold text-slate-800 hidden md:block max-w-[140px] truncate">
-                {profile?.nama || 'Administrator'}
+              <span className="text-xs font-semibold text-slate-800 hidden md:block max-w-[170px] truncate">
+                {displayName}
               </span>
             </div>
           </div>

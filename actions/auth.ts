@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 
 export async function loginAction(prevState: any, formData: FormData) {
   const rawIdentifier = (formData.get('identifier') as string)?.trim() || '';
@@ -14,15 +15,17 @@ export async function loginAction(prevState: any, formData: FormData) {
 
   const supabase = await createClient();
 
+  const cookieStore = await cookies();
+
   let loginEmail = rawIdentifier.toLowerCase();
   const cleanNip = rawIdentifier.replace(/\s+/g, '');
 
-  // Alias mapping: Menjembatani akun Kepsek & Guru ke auth session Supabase yang aktif
-  if (
+  const isKepsekLogin =
     loginEmail === 'kepsek@smpn8karawangbarat.sch.id' ||
-    cleanNip === '197007241998021003' ||
-    loginEmail === 'admin@sekolah.sch.id'
-  ) {
+    cleanNip === '197007241998021003';
+
+  // Alias mapping: Menjembatani akun Kepsek & Guru ke auth session Supabase yang aktif
+  if (isKepsekLogin || loginEmail === 'admin@sekolah.sch.id') {
     loginEmail = 'admin@sekolah.sch.id';
     password = 'admin123';
   } else if (
@@ -57,23 +60,31 @@ export async function loginAction(prevState: any, formData: FormData) {
     return { error: 'Email/NIP atau kata sandi tidak valid.' };
   }
 
-  // Cek role untuk menentukan redirect
-  let role = data.user.user_metadata?.role;
-  if (!role) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', data.user.id)
-      .single();
-    role = profile?.role || 'GURU';
+  // Tentukan role definitif
+  let role: string = 'GURU';
+  if (isKepsekLogin) {
+    role = 'KEPSEK';
+    cookieStore.set('auth_impersonate_role', 'KEPSEK', { path: '/', httpOnly: false });
+    cookieStore.set('auth_impersonate_email', 'kepsek@smpn8karawangbarat.sch.id', { path: '/', httpOnly: false });
+  } else if (loginEmail === 'admin@sekolah.sch.id') {
+    role = 'ADMIN';
+    cookieStore.set('auth_impersonate_role', 'ADMIN', { path: '/', httpOnly: false });
+    cookieStore.delete('auth_impersonate_email');
+  } else {
+    role = data.user.user_metadata?.role || 'GURU';
+    cookieStore.delete('auth_impersonate_role');
+    cookieStore.delete('auth_impersonate_email');
   }
 
-  const targetUrl = role === 'ADMIN' ? '/admin' : '/guru';
+  const targetUrl = role === 'ADMIN' || role === 'KEPSEK' ? '/admin' : '/guru';
   redirect(targetUrl);
 }
 
 export async function logoutAction() {
   const supabase = await createClient();
+  const cookieStore = await cookies();
+  cookieStore.delete('auth_impersonate_role');
+  cookieStore.delete('auth_impersonate_email');
   await supabase.auth.signOut();
   redirect('/login');
 }

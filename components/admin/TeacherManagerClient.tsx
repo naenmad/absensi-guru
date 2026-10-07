@@ -226,15 +226,24 @@ export default function TeacherManagerClient({ initialTeachers }: { initialTeach
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span
-                        className={`px-2 py-0.5 rounded-md font-semibold text-[10px] border ${
-                          teacher.role === 'ADMIN'
-                            ? 'bg-purple-50 text-purple-700 border-purple-200'
-                            : 'bg-blue-50 text-blue-700 border-blue-200'
-                        }`}
-                      >
-                        {teacher.role || 'GURU'}
-                      </span>
+                      {(() => {
+                        const isTeacherKepsek =
+                          teacher.role === 'KEPSEK' ||
+                          teacher.jabatan?.toLowerCase().includes('kepala sekolah');
+                        return (
+                          <span
+                            className={`px-2 py-0.5 rounded-md font-semibold text-[10px] border ${
+                              isTeacherKepsek
+                                ? 'bg-amber-50 text-amber-800 border-amber-300'
+                                : teacher.role === 'ADMIN'
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : 'bg-blue-50 text-blue-700 border-blue-200'
+                            }`}
+                          >
+                            {isTeacherKepsek ? 'KEPSEK' : teacher.role || 'GURU'}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="py-3.5 px-4 text-slate-500">{teacher.no_hp || '-'}</td>
                     <td className="py-3.5 px-4 text-right">

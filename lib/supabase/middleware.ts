@@ -51,22 +51,32 @@ export async function updateSession(request: NextRequest) {
 
   // 2. Jika sudah login
   if (user) {
-    // Ambil role dari profiles atau user_metadata
-    let role = user.user_metadata?.role;
+    // Ambil role dari cookie override (jika ada) atau user_metadata
+    const cookieRole = request.cookies.get('auth_impersonate_role')?.value;
+    let role = cookieRole || user.user_metadata?.role;
 
     if (!role) {
       const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, jabatan, email')
         .eq('id', user.id)
         .single();
-      role = profile?.role || 'GURU';
+      if (
+        profile?.jabatan?.toLowerCase().includes('kepala sekolah') ||
+        profile?.email === 'kepsek@smpn8karawangbarat.sch.id'
+      ) {
+        role = 'KEPSEK';
+      } else {
+        role = profile?.role || 'GURU';
+      }
     }
+
+    const isAdminOrKepsek = role === 'ADMIN' || role === 'KEPSEK';
 
     // Jika sedang di halaman login atau root `/`
     if (path === '/login' || path === '/') {
       const url = request.nextUrl.clone();
-      url.pathname = role === 'ADMIN' ? '/admin' : '/guru';
+      url.pathname = isAdminOrKepsek ? '/admin' : '/guru';
       return NextResponse.redirect(url);
     }
 
@@ -77,8 +87,8 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Role Guard: Admin diarahkan ke /admin jika membuka /guru
-    if (role === 'ADMIN' && path.startsWith('/guru')) {
+    // Role Guard: Admin & Kepsek diarahkan ke /admin jika membuka /guru
+    if (isAdminOrKepsek && path.startsWith('/guru')) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin';
       return NextResponse.redirect(url);
